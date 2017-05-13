@@ -23,6 +23,7 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
     boolean levelXMLLoaded = false;
     Document levesDOM;
     Element root;
+    Point playerPos = new Point(this.getWidth() / 2, this.getHeight() / 2);
 
     void changeLevel(int newLevel)
     {
@@ -89,6 +90,7 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                         //get the path to the background image from the DOM then use the built in ImageIO to read it into the background
                         File backgroundImageFile = new File("res/images/" + backgroundNode.getAttributes().getNamedItem("res").getNodeValue());
                         background = ImageIO.read(backgroundImageFile);
+                        g.drawImage(background, 0, 0, this);
                     }
                 }
             }
@@ -96,7 +98,20 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
             {
                 //e.printStackTrace();
             }
-            g.drawImage(background, 0, 0, this);
+            //draw player if not in the menu
+            if (currentLevel != 0)
+            {
+                try
+                {
+                    BufferedImage player = new BufferedImage(103, 119, BufferedImage.TYPE_INT_ARGB);
+                    player = ImageIO.read(new File("res/images/sprite.jpg"));
+                    g.drawImage(player, playerPos.x, playerPos.y, this);
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -114,6 +129,18 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                 {
                     changeLevel(1);
                 }
+                break;
+            case (KeyEvent.VK_W):
+                playerPos.y -= 2;
+                break;
+            case (KeyEvent.VK_S):
+                playerPos.y += 2;
+                break;
+            case (KeyEvent.VK_A):
+                playerPos.x -= 2;
+                break;
+            case (KeyEvent.VK_D):
+                playerPos.x += 2;
                 break;
         }
     }
