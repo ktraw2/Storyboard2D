@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<levels>
+    <level name="Main Menu" stage="0">
+        <background res="mainmenu.png"></background>
+    </level>
+
+    <level name="Test Level" stage="1">
+        <background res="bivV4.jpg"></background>
+    </level>
+</levels>

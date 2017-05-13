@@ -1,5 +1,7 @@
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.imageio.ImageIO;
 import javax.xml.parsers.DocumentBuilder;
@@ -8,7 +10,6 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
-import java.awt.image.Raster;
 import java.io.*;
 
 /**
@@ -17,16 +18,15 @@ import java.io.*;
 public class MainCanvas extends Canvas implements KeyListener, Runnable {
 
     Thread runThread;
-    final String[] LEVEL_FILE_NAMES = new String[]{"menu", "testlevel"};
+    //final String[] LEVEL_FILE_NAMES = new String[]{"menu", "testlevel"};
     int currentLevel = 0;
-    boolean currentLevelLoaded = false;
-    Document level;
+    boolean levelXMLLoaded = false;
+    Document levesDOM;
     Element root;
 
     void changeLevel(int newLevel)
     {
         currentLevel = newLevel;
-        currentLevelLoaded = false;
     }
 
     public void update(Graphics g)
@@ -59,18 +59,42 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
             currentLevel = 0;
         }
         //draw background image if it exists
-        if (currentLevelLoaded)
+        if (levelXMLLoaded)
         {
             BufferedImage background = new BufferedImage(d.width, d.height, BufferedImage.TYPE_INT_ARGB);
             try
             {
-                //get the path to the background image from the DOM then use the built in ImageIO to read it into the background
-                File backgroundImageFile = new File("res/images/" + root.getElementsByTagName("background").item(0).getAttributes().getNamedItem("res").getNodeValue());
-                background = ImageIO.read(backgroundImageFile);
+                //find the node for the current levesDOM in the DOM
+                NodeList levels = levesDOM.getElementsByTagName("level");
+                Node levelNode = null;
+                for (int i = 0; i < levels.getLength(); i++)
+                    if (Integer.parseInt(levels.item(i).getAttributes().getNamedItem("stage").getNodeValue()) == currentLevel)
+                    {
+                        levelNode = levels.item(i);
+                        break;
+                    }
+                if (levelNode != null)
+                {
+                    //find the node for the background within the node for the current levesDOM
+                    NodeList levelChildren = levelNode.getChildNodes();
+                    Node backgroundNode = null;
+                    for (int i = 0; i < levelChildren.getLength(); i++)
+                        if (levelChildren.item(i).getNodeName().equals("background"))
+                        {
+                            backgroundNode = levelChildren.item(i);
+                            break;
+                        }
+                    if (backgroundNode != null)
+                    {
+                        //get the path to the background image from the DOM then use the built in ImageIO to read it into the background
+                        File backgroundImageFile = new File("res/images/" + backgroundNode.getAttributes().getNamedItem("res").getNodeValue());
+                        background = ImageIO.read(backgroundImageFile);
+                    }
+                }
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                //e.printStackTrace();
             }
             g.drawImage(background, 0, 0, this);
         }
@@ -103,10 +127,10 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
     public void run() {
         while (true)
         {
-            if (!currentLevelLoaded)
+            if (!levelXMLLoaded)
             {
                 //System.out.println(System.getProperty("user.dir") + File.separator + System.getProperty("sun.java.command") .substring(0, System.getProperty("sun.java.command").lastIndexOf(".")) .replace(".", File.separator));
-                File file = new File("res/levels/" + LEVEL_FILE_NAMES[currentLevel] + ".xml");
+                File file = new File("res/levels.xml");
 
                 try
                 {
@@ -128,9 +152,9 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                     fileReader.close();
                     //parse
                     ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(stringBuilder.toString().getBytes("UTF-8"));
-                    level = documentBuilder.parse(byteArrayInputStream);
-                    root = level.getDocumentElement();
-                    currentLevelLoaded = true;
+                    levesDOM = documentBuilder.parse(byteArrayInputStream);
+                    root = levesDOM.getDocumentElement();
+                    levelXMLLoaded = true;
                 }
                 catch (Exception e)
                 {
