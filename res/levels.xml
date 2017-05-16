@@ -6,9 +6,9 @@
 
     <level name="Test Level" stage="1">
         <background res="bivV4.jpg"></background>
-        <sprite res="" collision="testscript" x="123" y="125"></sprite>
+        <sprite res="49.png" collision="testscript" x="123" y="125"></sprite>
         <text id="testscript" lines="3" line1="hello" line2="this is a..." line3="test"></text>
-        <sprite res="" collision="test2" x="564" y="243"></sprite>
+        <sprite res="android.jpg" collision="test2" x="564" y="243"></sprite>
         <text id="test2" lines="2" line1="hi" line2="aihfjdk"></text>
     </level>
 </levels>

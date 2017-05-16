@@ -19,9 +19,10 @@ import java.util.ArrayList;
  */
 public class MainCanvas extends Canvas implements KeyListener, Runnable {
 
-    final int PLAYER_SPEED = 2;
+    final int PLAYER_SPEED = 3;
 
     ArrayList<Integer> pressedKeys = new ArrayList<Integer>();
+    ArrayList<Sprite> sprites;
     Thread runThread;
     //final String[] LEVEL_FILE_NAMES = new String[]{"menu", "testlevel"};
     int currentLevel = 0;
@@ -79,16 +80,12 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
             //draw player if not in the menu
             if (currentLevel != 0)
             {
-                try
-                {
-                    player = new BufferedImage(103, 119, BufferedImage.TYPE_INT_ARGB);
-                    player = ImageIO.read(new File("res/images/sprite.jpg"));
-                    g.drawImage(player, playerPos.x, playerPos.y, this);
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                }
+                g.drawImage(player, playerPos.x, playerPos.y, this);
+            }
+            //draw all sprites
+            for (Sprite sprite : sprites)
+            {
+                sprite.draw(g, this);
             }
         }
         else if (levelXMLLoaded && levelInitialized == false)
@@ -119,12 +116,11 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
         {
             if (!levelXMLLoaded)
             {
-                //System.out.println(System.getProperty("user.dir") + File.separator + System.getProperty("sun.java.command") .substring(0, System.getProperty("sun.java.command").lastIndexOf(".")) .replace(".", File.separator));
                 File file = new File("res/levels.xml");
-
                 try
                 {
                     loadingScreen = ImageIO.read(new File("res/images/loading.jpg"));
+                    player = ImageIO.read(new File("res/images/sprite.jpg"));
                     //set up document builders for XML parsing
                     DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
                     DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
@@ -184,9 +180,13 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                                 background = ImageIO.read(backgroundImageFile);
                             }
                             //find all sprites
+                            sprites = new ArrayList<Sprite>();
                             for (int i = 0; i < levelChildren.getLength(); i++)
                             {
-
+                                if (levelChildren.item(i).getNodeName().equals("sprite"))
+                                {
+                                    sprites.add(new Sprite(levelChildren.item(i)));
+                                }
                             }
                         }
                     }
