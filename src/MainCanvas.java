@@ -10,24 +10,37 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
 import java.io.*;
+import java.util.ArrayList;
 
 /**
  * Created by kevin on 5/11/17.
  */
 public class MainCanvas extends Canvas implements KeyListener, Runnable {
 
+    final int PLAYER_SPEED = 2;
+
+    ArrayList<Integer> pressedKeys = new ArrayList<Integer>();
     Thread runThread;
     //final String[] LEVEL_FILE_NAMES = new String[]{"menu", "testlevel"};
     int currentLevel = 0;
     boolean levelXMLLoaded = false;
+    boolean levelInitialized = false;
     Document levesDOM;
     Element root;
-    Point playerPos = new Point(this.getWidth() / 2, this.getHeight() / 2);
+    Point playerPos = new Point(0, 0);
+    BufferedImage player = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+    BufferedImage background = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+    BufferedImage loadingScreen = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+    File backgroundImageFile = new File("");
 
     void changeLevel(int newLevel)
     {
         currentLevel = newLevel;
+        playerPos.x = this.getWidth() / 2;
+        playerPos.y = this.getHeight() / 2;
+        levelInitialized = false;
     }
 
     public void update(Graphics g)
@@ -60,50 +73,15 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
             currentLevel = 0;
         }
         //draw background image if it exists
-        if (levelXMLLoaded)
+        if (levelXMLLoaded && levelInitialized)
         {
-            BufferedImage background = new BufferedImage(d.width, d.height, BufferedImage.TYPE_INT_ARGB);
-            try
-            {
-                //find the node for the current levesDOM in the DOM
-                NodeList levels = levesDOM.getElementsByTagName("level");
-                Node levelNode = null;
-                for (int i = 0; i < levels.getLength(); i++)
-                    if (Integer.parseInt(levels.item(i).getAttributes().getNamedItem("stage").getNodeValue()) == currentLevel)
-                    {
-                        levelNode = levels.item(i);
-                        break;
-                    }
-                if (levelNode != null)
-                {
-                    //find the node for the background within the node for the current levesDOM
-                    NodeList levelChildren = levelNode.getChildNodes();
-                    Node backgroundNode = null;
-                    for (int i = 0; i < levelChildren.getLength(); i++)
-                        if (levelChildren.item(i).getNodeName().equals("background"))
-                        {
-                            backgroundNode = levelChildren.item(i);
-                            break;
-                        }
-                    if (backgroundNode != null)
-                    {
-                        //get the path to the background image from the DOM then use the built in ImageIO to read it into the background
-                        File backgroundImageFile = new File("res/images/" + backgroundNode.getAttributes().getNamedItem("res").getNodeValue());
-                        background = ImageIO.read(backgroundImageFile);
-                        g.drawImage(background, 0, 0, this);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                //e.printStackTrace();
-            }
+            g.drawImage(background, 0, 0, this);
             //draw player if not in the menu
             if (currentLevel != 0)
             {
                 try
                 {
-                    BufferedImage player = new BufferedImage(103, 119, BufferedImage.TYPE_INT_ARGB);
+                    player = new BufferedImage(103, 119, BufferedImage.TYPE_INT_ARGB);
                     player = ImageIO.read(new File("res/images/sprite.jpg"));
                     g.drawImage(player, playerPos.x, playerPos.y, this);
                 }
@@ -112,6 +90,10 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                     e.printStackTrace();
                 }
             }
+        }
+        else if (levelXMLLoaded && levelInitialized == false)
+        {
+            g.drawImage(loadingScreen, 0, 0, this);
         }
     }
 
@@ -122,32 +104,13 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
 
     @Override
     public void keyPressed(KeyEvent e) {
-        switch (e.getKeyCode())
-        {
-            case (KeyEvent.VK_SPACE):
-                if (currentLevel == 0)
-                {
-                    changeLevel(1);
-                }
-                break;
-            case (KeyEvent.VK_W):
-                playerPos.y -= 2;
-                break;
-            case (KeyEvent.VK_S):
-                playerPos.y += 2;
-                break;
-            case (KeyEvent.VK_A):
-                playerPos.x -= 2;
-                break;
-            case (KeyEvent.VK_D):
-                playerPos.x += 2;
-                break;
-        }
+        if (!pressedKeys.contains(e.getKeyCode()))
+            pressedKeys.add(e.getKeyCode());
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-
+        pressedKeys.remove(pressedKeys.indexOf(e.getKeyCode()));
     }
 
     @Override
@@ -161,6 +124,7 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
 
                 try
                 {
+                    loadingScreen = ImageIO.read(new File("res/images/loading.jpg"));
                     //set up document builders for XML parsing
                     DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
                     DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
@@ -188,11 +152,92 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                     e.printStackTrace();
                 }
             }
+            else
+            {
+                if (!levelInitialized)
+                {
+                    try
+                    {
+                        //find the node for the current level in the DOM
+                        NodeList levels = levesDOM.getElementsByTagName("level");
+                        Node levelNode = null;
+                        for (int i = 0; i < levels.getLength(); i++)
+                            if (Integer.parseInt(levels.item(i).getAttributes().getNamedItem("stage").getNodeValue()) == currentLevel)
+                            {
+                                levelNode = levels.item(i);
+                                break;
+                            }
+                        if (levelNode != null)
+                        {
+                            //find the node for the background within the node for the current levesDOM
+                            NodeList levelChildren = levelNode.getChildNodes();
+                            Node backgroundNode = null;
+                            for (int i = 0; i < levelChildren.getLength(); i++)
+                                if (levelChildren.item(i).getNodeName().equals("background"))
+                                {
+                                    backgroundNode = levelChildren.item(i);
+                                    break;
+                                }
+                            if (backgroundNode != null) {
+                                //get the path to the background image from the DOM then use the built in ImageIO to read it into the background
+                                backgroundImageFile = new File("res/images/" + backgroundNode.getAttributes().getNamedItem("res").getNodeValue());
+                                background = ImageIO.read(backgroundImageFile);
+                            }
+                            //find all sprites
+                            for (int i = 0; i < levelChildren.getLength(); i++)
+                            {
 
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                    levelInitialized = true;
+                }
+            }
+            //interpret key events
+            for (int i : pressedKeys)
+            {
+                switch (i)
+                {
+                    case (KeyEvent.VK_SPACE):
+                        if (currentLevel == 0)
+                        {
+                            changeLevel(1);
+                        }
+                        break;
+                    case (KeyEvent.VK_W):
+                        if (playerPos.y - PLAYER_SPEED <= 0)
+                            playerPos.y = 0;
+                        else
+                            playerPos.y -= PLAYER_SPEED;
+                        break;
+                    case (KeyEvent.VK_S):
+                        if (playerPos.y + player.getHeight() + PLAYER_SPEED >= this.getHeight())
+                            playerPos.y = this.getHeight() - player.getHeight();
+                        else
+                            playerPos.y += PLAYER_SPEED;
+                        break;
+                    case (KeyEvent.VK_A):
+                        if (playerPos.x - PLAYER_SPEED <= 0)
+                            playerPos.x = 0;
+                        else
+                            playerPos.x -= PLAYER_SPEED;
+                        break;
+                    case (KeyEvent.VK_D):
+                        if (playerPos.x + player.getWidth() + PLAYER_SPEED >= this.getWidth())
+                            playerPos.x = this.getWidth() - player.getWidth();
+                        else
+                            playerPos.x += PLAYER_SPEED;
+                        break;
+                }
+            }
             repaint();
             try
             {
-                Thread.sleep(60);
+                Thread.sleep(15);
             }
             catch (Exception e)
             {
