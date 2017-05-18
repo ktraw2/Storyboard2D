@@ -19,6 +19,10 @@ public class Sprite {
     private BufferedImage spriteImage;
     private Node spriteNode;
 
+    public Sprite(int x)
+    {
+        this.x = x;
+    }
 
     public Sprite(Node spriteNode)
     {
@@ -41,6 +45,26 @@ public class Sprite {
     public void draw(Graphics g, ImageObserver observer)
     {
         g.drawImage(spriteImage, x, y, observer);
+    }
+
+    public int getX()
+    {
+        return x;
+    }
+
+    public int getY()
+    {
+        return y;
+    }
+
+    public int getWidth()
+    {
+        return spriteImage.getWidth();
+    }
+
+    public int getHeight()
+    {
+        return spriteImage.getHeight();
     }
 
 }

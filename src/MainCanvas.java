@@ -44,6 +44,36 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
         levelInitialized = false;
     }
 
+    Sprite checkCollisions(int xMotion, int yMotion)
+    {
+        int x = playerPos.x;
+        int y = playerPos.y;
+        int width = player.getWidth();
+        int height = player.getHeight();
+        //O(n^2) type collision detection because this is a very simple engine for an English project, sorry to anyone who might read this code :(
+        for (Sprite sprite : sprites)
+            if (((x + width + xMotion >= sprite.getX() && x + xMotion + width <= sprite.getX() + sprite.getWidth()) || (x + xMotion >= sprite.getX() && x + xMotion <= sprite.getX() + sprite.getWidth()) || (x + xMotion <= sprite.getX() && x + width + xMotion >= sprite.getX() + sprite.getWidth())) && ((y + height + yMotion >= sprite.getY() && y + height + yMotion <= sprite.getY() + sprite.getHeight()) || (y + yMotion >= sprite.getY() && y + yMotion <= sprite.getY() + sprite.getHeight()) || (y + yMotion <= sprite.getY() && y + height + yMotion >= sprite.getY() + sprite.getHeight())))
+                return sprite;
+        return new Sprite(-1);
+    }
+
+    int getMovement(char dimension, boolean positiveDirection)
+    {
+        int x = playerPos.x;
+        int y = playerPos.y;
+        int width = player.getWidth();
+        int height = player.getHeight();
+        for (Sprite sprite : sprites)
+        {
+            if (dimension == 'x' && positiveDirection)
+            {
+                if (x + PLAYER_SPEED >= sprite.getX() && x + PLAYER_SPEED <= sprite.getWidth())
+                    return sprite.getX() - 1;
+            }
+        }
+        return PLAYER_SPEED;
+    }
+
     public void update(Graphics g)
     {
         //set up double buffering
@@ -92,6 +122,7 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
         {
             g.drawImage(loadingScreen, 0, 0, this);
         }
+
     }
 
     @Override
@@ -198,7 +229,8 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                 }
             }
             //interpret key events
-            for (int i : pressedKeys)
+            Integer[] keysToProcess = pressedKeys.toArray(new Integer[pressedKeys.size()]);
+            for (int i : keysToProcess)
             {
                 switch (i)
                 {
@@ -209,28 +241,45 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                         }
                         break;
                     case (KeyEvent.VK_W):
+                        Sprite colliderW = checkCollisions(0, -PLAYER_SPEED);
                         if (playerPos.y - PLAYER_SPEED <= 0)
                             playerPos.y = 0;
                         else
-                            playerPos.y -= PLAYER_SPEED;
-                        break;
+                            if (colliderW.getX() == -1)
+                                playerPos.y -= PLAYER_SPEED;
+                            else
+                                playerPos.y += 1;
+                            break;
                     case (KeyEvent.VK_S):
+                        Sprite colliderS = checkCollisions(0, PLAYER_SPEED);
                         if (playerPos.y + player.getHeight() + PLAYER_SPEED >= this.getHeight())
                             playerPos.y = this.getHeight() - player.getHeight();
                         else
-                            playerPos.y += PLAYER_SPEED;
+                            if (colliderS.getX() == -1)
+                                playerPos.y += PLAYER_SPEED;
+                            else
+                                playerPos.y -= 1;
                         break;
                     case (KeyEvent.VK_A):
+                        Sprite colliderA = checkCollisions(-PLAYER_SPEED, 0);
                         if (playerPos.x - PLAYER_SPEED <= 0)
                             playerPos.x = 0;
                         else
-                            playerPos.x -= PLAYER_SPEED;
+                            if (colliderA.getX() == -1)
+                                playerPos.x -= PLAYER_SPEED;
+                            else
+                                playerPos.x += 1;
                         break;
                     case (KeyEvent.VK_D):
+                        Sprite colliderD = checkCollisions(PLAYER_SPEED, 0);
                         if (playerPos.x + player.getWidth() + PLAYER_SPEED >= this.getWidth())
                             playerPos.x = this.getWidth() - player.getWidth();
                         else
-                            playerPos.x += PLAYER_SPEED;
+                            System.out.println(colliderD.getX());
+                            if (colliderD.getX() == -1)
+                                playerPos.x += PLAYER_SPEED;
+                            else
+                                playerPos.x -= 1;
                         break;
                 }
             }
