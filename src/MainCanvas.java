@@ -57,23 +57,6 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
         return new Sprite(-1);
     }
 
-    int getMovement(char dimension, boolean positiveDirection)
-    {
-        int x = playerPos.x;
-        int y = playerPos.y;
-        int width = player.getWidth();
-        int height = player.getHeight();
-        for (Sprite sprite : sprites)
-        {
-            if (dimension == 'x' && positiveDirection)
-            {
-                if (x + PLAYER_SPEED >= sprite.getX() && x + PLAYER_SPEED <= sprite.getWidth())
-                    return sprite.getX() - 1;
-            }
-        }
-        return PLAYER_SPEED;
-    }
-
     public void update(Graphics g)
     {
         //set up double buffering
@@ -163,7 +146,6 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                     while (currentLine != null)
                     {
                         stringBuilder.append(currentLine + "\n");
-                        System.out.print(currentLine + "\n");
                         currentLine = bufferedReader.readLine();
                     }
                     bufferedReader.close();
@@ -242,49 +224,44 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                         }
                         break;
                     case (KeyEvent.VK_W):
-                        Sprite colliderW = checkCollisions(0, -PLAYER_SPEED);
+                        collider = checkCollisions(0, -PLAYER_SPEED);
                         if (playerPos.y - PLAYER_SPEED <= 0)
                             playerPos.y = 0;
                         else
-                            if (colliderW.getX() == -1)
+                            if (collider.getX() == -1)
                                 playerPos.y -= PLAYER_SPEED;
                             else
-                                //playerPos.y += 1;
-                                playerPos.y = colliderW.getY() + colliderW.getHeight();
+                                playerPos.y = collider.getY() + collider.getHeight();
                             break;
                     case (KeyEvent.VK_S):
-                        Sprite colliderS = checkCollisions(0, PLAYER_SPEED);
+                        collider = checkCollisions(0, PLAYER_SPEED);
                         if (playerPos.y + player.getHeight() + PLAYER_SPEED >= this.getHeight())
                             playerPos.y = this.getHeight() - player.getHeight();
                         else
-                            if (colliderS.getX() == -1)
+                            if (collider.getX() == -1)
                                 playerPos.y += PLAYER_SPEED;
                             else
-                                //playerPos.y -= 1;
-                                playerPos.y = colliderS.getY() - player.getHeight();
+                                playerPos.y = collider.getY() - player.getHeight();
                         break;
                     case (KeyEvent.VK_A):
-                        Sprite colliderA = checkCollisions(-PLAYER_SPEED, 0);
+                        collider = checkCollisions(-PLAYER_SPEED, 0);
                         if (playerPos.x - PLAYER_SPEED <= 0)
                             playerPos.x = 0;
                         else
-                            if (colliderA.getX() == -1)
+                            if (collider.getX() == -1)
                                 playerPos.x -= PLAYER_SPEED;
                             else
-                                //playerPos.x += 1;
-                                playerPos.x = colliderA.getX() + colliderA.getWidth();
+                                playerPos.x = collider.getX() + collider.getWidth();
                         break;
                     case (KeyEvent.VK_D):
-                        Sprite colliderD = checkCollisions(PLAYER_SPEED, 0);
+                        collider = checkCollisions(PLAYER_SPEED, 0);
                         if (playerPos.x + player.getWidth() + PLAYER_SPEED >= this.getWidth())
                             playerPos.x = this.getWidth() - player.getWidth();
                         else
-                            System.out.println(colliderD.getX());
-                            if (colliderD.getX() == -1)
+                            if (collider.getX() == -1)
                                 playerPos.x += PLAYER_SPEED;
                             else
-                                //playerPos.x -= 1;
-                                playerPos.x = colliderD.getX() - player.getWidth();
+                                playerPos.x = collider.getX() - player.getWidth();
                         break;
                 }
             }
