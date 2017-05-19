@@ -52,7 +52,7 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
         int height = player.getHeight();
         //O(n^2) type collision detection because this is a very simple engine for an English project, sorry to anyone who might read this code :(
         for (Sprite sprite : sprites)
-            if (((x + width + xMotion >= sprite.getX() && x + xMotion + width <= sprite.getX() + sprite.getWidth()) || (x + xMotion >= sprite.getX() && x + xMotion <= sprite.getX() + sprite.getWidth()) || (x + xMotion <= sprite.getX() && x + width + xMotion >= sprite.getX() + sprite.getWidth())) && ((y + height + yMotion >= sprite.getY() && y + height + yMotion <= sprite.getY() + sprite.getHeight()) || (y + yMotion >= sprite.getY() && y + yMotion <= sprite.getY() + sprite.getHeight()) || (y + yMotion <= sprite.getY() && y + height + yMotion >= sprite.getY() + sprite.getHeight())))
+            if (((x + width + xMotion - 1 >= sprite.getX() && x + xMotion + width <= sprite.getX() + sprite.getWidth() - 1) || (x + xMotion >= sprite.getX() && x + xMotion <= sprite.getX() + sprite.getWidth() - 1) || (x + xMotion <= sprite.getX() && x + width + xMotion >= sprite.getX() + sprite.getWidth() - 1)) && ((y + height + yMotion - 1 >= sprite.getY() && y + height + yMotion <= sprite.getY() + sprite.getHeight() - 1) || (y + yMotion >= sprite.getY() && y + yMotion <= sprite.getY() + sprite.getHeight() - 1) || (y + yMotion <= sprite.getY() && y + height + yMotion >= sprite.getY() + sprite.getHeight() - 1)))
                 return sprite;
         return new Sprite(-1);
     }
@@ -230,6 +230,7 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
             }
             //interpret key events
             Integer[] keysToProcess = pressedKeys.toArray(new Integer[pressedKeys.size()]);
+            Sprite collider = null;
             for (int i : keysToProcess)
             {
                 switch (i)
@@ -248,7 +249,8 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                             if (colliderW.getX() == -1)
                                 playerPos.y -= PLAYER_SPEED;
                             else
-                                playerPos.y += 1;
+                                //playerPos.y += 1;
+                                playerPos.y = colliderW.getY() + colliderW.getHeight();
                             break;
                     case (KeyEvent.VK_S):
                         Sprite colliderS = checkCollisions(0, PLAYER_SPEED);
@@ -258,7 +260,8 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                             if (colliderS.getX() == -1)
                                 playerPos.y += PLAYER_SPEED;
                             else
-                                playerPos.y -= 1;
+                                //playerPos.y -= 1;
+                                playerPos.y = colliderS.getY() - player.getHeight();
                         break;
                     case (KeyEvent.VK_A):
                         Sprite colliderA = checkCollisions(-PLAYER_SPEED, 0);
@@ -268,7 +271,8 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                             if (colliderA.getX() == -1)
                                 playerPos.x -= PLAYER_SPEED;
                             else
-                                playerPos.x += 1;
+                                //playerPos.x += 1;
+                                playerPos.x = colliderA.getX() + colliderA.getWidth();
                         break;
                     case (KeyEvent.VK_D):
                         Sprite colliderD = checkCollisions(PLAYER_SPEED, 0);
@@ -279,7 +283,8 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                             if (colliderD.getX() == -1)
                                 playerPos.x += PLAYER_SPEED;
                             else
-                                playerPos.x -= 1;
+                                //playerPos.x -= 1;
+                                playerPos.x = colliderD.getX() - player.getWidth();
                         break;
                 }
             }
