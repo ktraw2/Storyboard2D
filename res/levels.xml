@@ -8,6 +8,6 @@
         <background res="bivV4.jpg"></background>
         <sprite res="49.png" interaction="text" x="123" y="125">Hello`This is a test`</sprite>
         <sprite res="android.jpg" interaction="item" x="800" y="215"></sprite>
-        <sprite res="plus.png" interaction="item" x="500" y="500">minus.png`Good job`</sprite>
+        <sprite res="plus.png" interaction="zone" x="500" y="500">android.jpg`Good job`</sprite>
     </level>
 </levels>

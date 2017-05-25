@@ -15,7 +15,10 @@ import java.util.ArrayList;
 public class Sprite {
     private int x;
     private int y;
+    private int customWidth = 0;
+    private int customHeight = 0;
     private String interaction;
+    private String photoID;
     private BufferedImage spriteImage;
     private Node spriteNode;
     ArrayList<String> interactionAction;
@@ -30,6 +33,8 @@ public class Sprite {
         this.x = x;
         this.y = y;
         this.spriteImage = spriteImage;
+        customWidth = spriteImage.getWidth();
+        customHeight = spriteImage.getHeight();
         this.interaction = "collider";
     }
 
@@ -42,8 +47,10 @@ public class Sprite {
             this.x = Integer.parseInt(attributes.getNamedItem("x").getNodeValue());
             this.y = Integer.parseInt(attributes.getNamedItem("y").getNodeValue());
             this.interaction = attributes.getNamedItem("interaction").getNodeValue();
-            String path = attributes.getNamedItem("res").getNodeValue();
-            spriteImage = ImageIO.read(new File("res/images/" + path));
+            photoID = attributes.getNamedItem("res").getNodeValue();
+            spriteImage = ImageIO.read(new File("res/images/" + photoID));
+            customWidth = spriteImage.getWidth();
+            customHeight = spriteImage.getHeight();
             String rawScript = "";
             if (spriteNode.hasChildNodes())
             {
@@ -72,12 +79,33 @@ public class Sprite {
 
     public void drawRegular(Graphics g, ImageObserver observer)
     {
-        g.drawImage(spriteImage, x, y, observer);
+        g.drawImage(spriteImage, x, y, customWidth, customHeight, observer);
     }
 
     public void drawInInventory (Graphics g, ImageObserver observer, Sprite inventorySprite, int indexInInventory)
     {
         g.drawImage(spriteImage, inventorySprite.getX() + 10 + (75 * indexInInventory), inventorySprite.getY() + 50, 64, 64, observer);
+    }
+
+    public void setInteraction(String interaction)
+    {
+        this.interaction = interaction;
+    }
+
+    public void setCoordinates(Point coordinates)
+    {
+        this.x = coordinates.x;
+        this.y = coordinates.y;
+    }
+
+    public void setCustomWidth(int customWidth)
+    {
+        this.customWidth = customWidth;
+    }
+
+    public void setCustomHeight(int customHeight)
+    {
+        this.customHeight = customHeight;
     }
 
     public int getX()
@@ -92,12 +120,12 @@ public class Sprite {
 
     public int getWidth()
     {
-        return spriteImage.getWidth();
+        return customWidth;
     }
 
     public int getHeight()
     {
-        return spriteImage.getHeight();
+        return customHeight;
     }
 
     public String getInteraction()
@@ -105,8 +133,18 @@ public class Sprite {
         return interaction;
     }
 
-    public BufferedImage getSpriteImage()
+    public String getScriptAtLine(int line)
     {
-        return spriteImage;
+        return interactionAction.get(line);
+    }
+
+    public int getLinesOfText()
+    {
+        return interactionAction.size();
+    }
+
+    public String getPhotoID()
+    {
+        return photoID;
     }
 }
