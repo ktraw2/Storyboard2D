@@ -30,6 +30,7 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
     //final String[] LEVEL_FILE_NAMES = new String[]{"menu", "testlevel"};
     int currentLevel = 0;
     int currentLineOfText = 0;
+    int currentInteractionStage = 0;
     boolean levelXMLLoaded = false;
     boolean levelInitialized = false;
     boolean stopPlayerMovement = false;
@@ -60,6 +61,7 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
         currentLevel = newLevel;
         playerPos.x = this.getWidth() / 2;
         playerPos.y = this.getHeight() / 2;
+        currentInteractionStage = 0;
         levelInitialized = false;
     }
 
@@ -71,7 +73,7 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
         int height = player.getHeight();
         //O(n^2) type interactibility detection because this is a very simple engine for an English project, sorry to anyone who might read this code :(
         for (Sprite sprite : sprites)
-            if (((x + width - 1 >= sprite.getX() - MAX_DISTANCE && x + width <= sprite.getX() + sprite.getWidth() - 1 - MAX_DISTANCE) || (x >= sprite.getX() + MAX_DISTANCE && x  <= sprite.getX() + sprite.getWidth() - 1 + MAX_DISTANCE) || (x <= sprite.getX() + MAX_DISTANCE && x + width >= sprite.getX() + sprite.getWidth() - 1 - MAX_DISTANCE)) && ((y + height - 1 >= sprite.getY() - MAX_DISTANCE && y + height <= sprite.getY() + sprite.getHeight() - 1 - MAX_DISTANCE) || (y >= sprite.getY() + MAX_DISTANCE && y <= sprite.getY() + sprite.getHeight() - 1 + MAX_DISTANCE) || (y <= sprite.getY() + MAX_DISTANCE && y + height >= sprite.getY() + sprite.getHeight() - 1 - MAX_DISTANCE)))
+            if (spriteCanBeDrawn(sprite) && (((x + width - 1 >= sprite.getX() - MAX_DISTANCE && x + width <= sprite.getX() + sprite.getWidth() - 1 - MAX_DISTANCE) || (x >= sprite.getX() + MAX_DISTANCE && x  <= sprite.getX() + sprite.getWidth() - 1 + MAX_DISTANCE) || (x <= sprite.getX() + MAX_DISTANCE && x + width >= sprite.getX() + sprite.getWidth() - 1 - MAX_DISTANCE)) && ((y + height - 1 >= sprite.getY() - MAX_DISTANCE && y + height <= sprite.getY() + sprite.getHeight() - 1 - MAX_DISTANCE) || (y >= sprite.getY() + MAX_DISTANCE && y <= sprite.getY() + sprite.getHeight() - 1 + MAX_DISTANCE) || (y <= sprite.getY() + MAX_DISTANCE && y + height >= sprite.getY() + sprite.getHeight() - 1 - MAX_DISTANCE))))
                 return sprite;
         return new Sprite("zoneEmpty");
     }
@@ -84,9 +86,14 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
         int height = player.getHeight();
         //O(n^2) type collision detection because this is a very simple engine for an English project, sorry to anyone who might read this code :(
         for (Sprite sprite : sprites)
-            if (((x + width + xMotion - 1 >= sprite.getX() && x + xMotion + width <= sprite.getX() + sprite.getWidth() - 1) || (x + xMotion >= sprite.getX() && x + xMotion <= sprite.getX() + sprite.getWidth() - 1) || (x + xMotion <= sprite.getX() && x + width + xMotion >= sprite.getX() + sprite.getWidth() - 1)) && ((y + height + yMotion - 1 >= sprite.getY() && y + height + yMotion <= sprite.getY() + sprite.getHeight() - 1) || (y + yMotion >= sprite.getY() && y + yMotion <= sprite.getY() + sprite.getHeight() - 1) || (y + yMotion <= sprite.getY() && y + height + yMotion >= sprite.getY() + sprite.getHeight() - 1)))
+            if (spriteCanBeDrawn(sprite) && (((x + width + xMotion - 1 >= sprite.getX() && x + xMotion + width <= sprite.getX() + sprite.getWidth() - 1) || (x + xMotion >= sprite.getX() && x + xMotion <= sprite.getX() + sprite.getWidth() - 1) || (x + xMotion <= sprite.getX() && x + width + xMotion >= sprite.getX() + sprite.getWidth() - 1)) && ((y + height + yMotion - 1 >= sprite.getY() && y + height + yMotion <= sprite.getY() + sprite.getHeight() - 1) || (y + yMotion >= sprite.getY() && y + yMotion <= sprite.getY() + sprite.getHeight() - 1) || (y + yMotion <= sprite.getY() && y + height + yMotion >= sprite.getY() + sprite.getHeight() - 1))))
                 return sprite;
         return new Sprite("zoneEmpty");
+    }
+
+    boolean spriteCanBeDrawn(Sprite sprite)
+    {
+        return (sprite.getOrder() < 0 || (currentInteractionStage == sprite.getOrder() && sprite.getHideUntilCanInteract() == true) || (currentInteractionStage > sprite.getOrder() && sprite.getHideAfterInteraction() == false) || (currentInteractionStage <= sprite.getOrder() && sprite.getHideUntilCanInteract() == false));
     }
 
     public void update(Graphics g)
@@ -122,31 +129,31 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
         if (levelXMLLoaded && levelInitialized)
         {
             g.drawImage(background, 0, 0, this);
-            //drawRegular player if not in the menu
-            if (currentLevel != 0)
-            {
-                g.drawImage(player, playerPos.x, playerPos.y, this);
-            }
             //drawRegular all sprites
             for (Sprite sprite : sprites)
             {
-                sprite.drawRegular(g, this);
+                if (spriteCanBeDrawn(sprite))
+                    sprite.drawRegular(g, this);
             }
             //drawRegular inventory items
             for (Sprite sprite : inventory)
             {
                 sprite.drawInInventory(g, this, sprites.get(0), inventory.indexOf(sprite));
             }
+            //drawRegular player if not in the menu
+            if (currentLevel != 0)
+            {
+                g.drawImage(player, playerPos.x, playerPos.y, this);
+            }
             //draw text on screen if it needs to be
             if (indexOfTextToDraw != -1)
             {
                 stopPlayerMovement = true;
-                //textSprite.drawRegular(g, this);
+                textSprite.drawRegular(g, this);
                 Font myFont = new Font(this.getFont().getName(), 1, 72);
                 g.setFont(myFont);
                 String text = sprites.get(indexOfTextToDraw).getScriptAtLine(currentLineOfText);
                 g.drawString(text, d.width / 2 - (this.getFontMetrics(myFont).stringWidth(text) / 2), d.height - (textScreen.getHeight() / 2) - (myFont.getSize() / 2));
-
             }
         }
         else if (levelXMLLoaded && levelInitialized == false)
@@ -183,7 +190,6 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                 {
                     loadingScreen = ImageIO.read(new File("res/images/loading.jpg"));
                     textScreen = ImageIO.read(new File("res/images/textscreen.png"));
-                    player = ImageIO.read(new File("res/images/sprite.jpg"));
                     //set up document builders for XML parsing
                     DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
                     DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
@@ -227,20 +233,25 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                             }
                         if (levelNode != null)
                         {
-                            //find the node for the background within the node for the current levesDOM
+                            //find the node for the background and player sprite within the node for the current levesDOM
                             NodeList levelChildren = levelNode.getChildNodes();
                             Node backgroundNode = null;
                             for (int i = 0; i < levelChildren.getLength(); i++)
                                 if (levelChildren.item(i).getNodeName().equals("background"))
-                                {
                                     backgroundNode = levelChildren.item(i);
-                                    break;
-                                }
-                            if (backgroundNode != null) {
+                            if (backgroundNode != null)
+                            {
                                 //get the path to the background image from the DOM then use the built in ImageIO to read it into the background
                                 backgroundImageFile = new File("res/images/" + backgroundNode.getAttributes().getNamedItem("res").getNodeValue());
                                 background = ImageIO.read(backgroundImageFile);
                             }
+                            String playerLocation = null;
+                            if (levelNode.getAttributes().getNamedItem("player") != null)
+                                playerLocation = levelNode.getAttributes().getNamedItem("player").getNodeValue();
+                            if (!(playerLocation == null || playerLocation.equals("null")))
+                                player = ImageIO.read(new File("res/images/" + playerLocation));
+                            else
+                                player = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
                             //find all sprites and add the sprite for the inventory screen (if currentLevel is not 0)
                             sprites = new ArrayList<Sprite>();
                             if (currentLevel != 0)
@@ -249,12 +260,8 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                                 sprites.add(new Sprite(this.getWidth() - inventoryImage.getWidth(), this.getHeight() - inventoryImage.getHeight(), inventoryImage));
                             }
                             for (int i = 0; i < levelChildren.getLength(); i++)
-                            {
                                 if (levelChildren.item(i).getNodeName().equals("sprite"))
-                                {
                                     sprites.add(new Sprite(levelChildren.item(i)));
-                                }
-                            }
                         }
                     }
                     catch (Exception e)
@@ -298,7 +305,7 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                             collider = checkCollisions(0, -PLAYER_SPEED);
                             if (playerPos.y - PLAYER_SPEED <= 0)
                                 playerPos.y = 0;
-                            else if (collider.getInteraction().startsWith("zone"))
+                            else if (collider.getInteraction().equals("zoneEmpty") || (collider.getInteraction().equals("zone") && inventory.size() == 0))
                                 playerPos.y -= PLAYER_SPEED;
                             else
                                 playerPos.y = collider.getY() + collider.getHeight();
@@ -310,7 +317,7 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                             collider = checkCollisions(0, PLAYER_SPEED);
                             if (playerPos.y + player.getHeight() + PLAYER_SPEED >= this.getHeight())
                                 playerPos.y = this.getHeight() - player.getHeight();
-                            else if (collider.getInteraction().startsWith("zone"))
+                            else if (collider.getInteraction().equals("zoneEmpty") || (collider.getInteraction().equals("zone") && inventory.size() == 0))
                                 playerPos.y += PLAYER_SPEED;
                             else
                                 playerPos.y = collider.getY() - player.getHeight();
@@ -322,7 +329,7 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                             collider = checkCollisions(-PLAYER_SPEED, 0);
                             if (playerPos.x - PLAYER_SPEED <= 0)
                                 playerPos.x = 0;
-                            else if (collider.getInteraction().startsWith("zone"))
+                            else if (collider.getInteraction().equals("zoneEmpty") || (collider.getInteraction().equals("zone") && inventory.size() == 0))
                                 playerPos.x -= PLAYER_SPEED;
                             else
                                 playerPos.x = collider.getX() + collider.getWidth();
@@ -334,7 +341,7 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                             collider = checkCollisions(PLAYER_SPEED, 0);
                             if (playerPos.x + player.getWidth() + PLAYER_SPEED >= this.getWidth())
                                 playerPos.x = this.getWidth() - player.getWidth();
-                            else if (collider.getInteraction().startsWith("zone"))
+                            else if (collider.getInteraction().equals("zoneEmpty") || (collider.getInteraction().equals("zone") && inventory.size() == 0))
                                 playerPos.x += PLAYER_SPEED;
                             else
                                 playerPos.x = collider.getX() - player.getWidth();
@@ -343,51 +350,58 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                     case (KeyEvent.VK_E):
                         //see if the player is within 5 pixels of a sprite
                         collider = checkInteraction();
-                        if (collider.getInteraction().equals("text") && collider != lastTextInteraction)
+                        if (collider.getOrder() < 0 || collider.getOrder() == currentInteractionStage)
                         {
-                            System.out.println("text");
-                            buildTextInteraction(collider, 0);
-                        }
-                        else if (collider.getInteraction().equals("item"))
-                        {
-                            System.out.println("item");
-                            inventory.add(collider);
-                            sprites.remove(collider);
-                        }
-                        else if (collider.getInteraction().equals("zone"))
-                        {
-                            System.out.println("zone");
-                            String itemFilter = collider.getScriptAtLine(0);
-                            if (!itemFilter.equals("any"))
+                            boolean interactionFailed = false;
+                            if (collider.getInteraction().equals("text") && collider != lastTextInteraction)
                             {
-                                int foundIndex = -1;
-                                for (Sprite sprite : inventory)
-                                {
-                                    System.out.println(sprite.getPhotoID());
-                                    if (sprite.getPhotoID().equals(itemFilter))
+                                System.out.println("text");
+                                buildTextInteraction(collider, 0);
+                            }
+                            else if (collider.getInteraction().equals("item"))
+                            {
+                                System.out.println("item");
+                                inventory.add(collider);
+                                sprites.remove(collider);
+                            }
+                            else if (collider.getInteraction().equals("zone"))
+                            {
+                                System.out.println("zone");
+                                String itemFilter = collider.getItemFilter();
+                                if (!itemFilter.equals("any")) {
+                                    int foundIndex = -1;
+                                    for (Sprite sprite : inventory)
                                     {
-                                        foundIndex = inventory.indexOf(sprite);
-                                        break;
+                                        System.out.println(sprite.getResource());
+                                        if (sprite.getResource().equals(itemFilter))
+                                        {
+                                            foundIndex = inventory.indexOf(sprite);
+                                            break;
+                                        }
                                     }
-                                }
-                                if (foundIndex != -1)
-                                {
-                                    Sprite itemToPlace = inventory.get(foundIndex);
-                                    inventory.remove(itemToPlace);
-                                    itemToPlace.setInteraction("collider");
-                                    if (itemToPlace.getWidth() > collider.getWidth())
-                                        itemToPlace.setCustomWidth(collider.getWidth());
-                                    if (itemToPlace.getHeight() > collider.getHeight())
-                                        itemToPlace.setCustomHeight(collider.getHeight());
-                                    itemToPlace.setCoordinates(new Point(collider.getX() + (collider.getWidth() / 2) - (itemToPlace.getWidth() / 2), collider.getY() + (collider.getHeight() / 2) - (itemToPlace.getHeight() / 2)));
-                                    sprites.add(itemToPlace);
-                                    collider.setInteraction("collider");
-                                    if (collider.getLinesOfText() > 1)
+                                    if (foundIndex != -1)
                                     {
-                                        buildTextInteraction(collider, 1);
+                                        Sprite itemToPlace = inventory.get(foundIndex);
+                                        inventory.remove(itemToPlace);
+                                        itemToPlace.setInteraction("collider");
+                                        if (itemToPlace.getWidth() > collider.getWidth())
+                                            itemToPlace.setCustomWidth(collider.getWidth());
+                                        if (itemToPlace.getHeight() > collider.getHeight())
+                                            itemToPlace.setCustomHeight(collider.getHeight());
+                                        itemToPlace.setCoordinates(new Point(collider.getX() + (collider.getWidth() / 2) - (itemToPlace.getWidth() / 2), collider.getY() + (collider.getHeight() / 2) - (itemToPlace.getHeight() / 2)));
+                                        sprites.add(itemToPlace);
+                                        collider.setInteraction("collider");
+                                        if (collider.getLinesOfText() > 1)
+                                            buildTextInteraction(collider, 0);
+                                    }
+                                    else
+                                    {
+                                        interactionFailed = true;
                                     }
                                 }
                             }
+                            if (collider.getOrder() == currentInteractionStage && !interactionFailed)
+                                currentInteractionStage++;
                         }
                         else if (collider.getInteraction().equals("collider"))
                             System.out.println("collider");
