@@ -13,8 +13,11 @@ public class MainDesktop {
         JFrame mainFrame = new JFrame("Americanism");
         Canvas mainCanvas = new MainCanvas();
         mainCanvas.setSize(WINDOW_DIMENSION);
+        mainCanvas.setPreferredSize(WINDOW_DIMENSION);
         mainFrame.add(mainCanvas);
-        mainFrame.setSize(WINDOW_DIMENSION);
+        mainFrame.getContentPane().setSize(WINDOW_DIMENSION);
+        mainFrame.getContentPane().setPreferredSize(WINDOW_DIMENSION);
+        mainFrame.pack();
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mainFrame.setVisible(true);
     }

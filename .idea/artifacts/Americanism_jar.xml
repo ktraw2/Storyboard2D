@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Americanism:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Americanism_jar</output-path>
+    <root id="archive" name="Americanism.jar">
+      <element id="module-output" name="Americanism" />
+    </root>
+  </artifact>
+</component>

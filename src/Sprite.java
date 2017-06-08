@@ -6,7 +6,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.io.File;
-import java.rmi.server.ExportException;
 import java.util.ArrayList;
 
 /**
@@ -17,14 +16,50 @@ public class Sprite {
     private int y;
     private int customWidth = 0;
     private int customHeight = 0;
+    private int order;
     private String interaction;
-    private String photoID;
+    private String resource;
+    private String filterToItem;
+    private String customInteractionRender;
     private BufferedImage spriteImage;
-    private Node spriteNode;
-    ArrayList<String> interactionAction;
+    private boolean hideUntilCanInteract;
+    private boolean hideAfterInteraction;
+    private boolean isHidden;
+    private boolean doesEndLevel;
+    ArrayList<String> interactionText;
+    ArrayList<String> itemsToGive;
+
+    private ArrayList<String> parseMultiScript(String rawScript)
+    {
+        ArrayList<String> parseResult = new ArrayList<String>();
+        //parse the interaction script, looking for ` characters
+        int startIndex = 0;
+        for (int i = 0; i < rawScript.length(); i++) {
+            if (rawScript.charAt(i) == '`')
+            {
+                parseResult.add(rawScript.substring(startIndex, i));
+                startIndex = i + 1;
+            }
+        }
+        return parseResult;
+    }
+
+    public Sprite (BufferedImage spriteImage, String resource)
+    {
+        this.spriteImage = spriteImage;
+        customWidth = spriteImage.getWidth();
+        customHeight = spriteImage.getHeight();
+        this.resource = resource;
+    }
 
     public Sprite(String interaction)
     {
+        this.interaction = interaction;
+    }
+
+    public Sprite (String interactionScript, String interaction)
+    {
+        this.interactionText = parseMultiScript(interactionScript);
         this.interaction = interaction;
     }
 
@@ -40,40 +75,117 @@ public class Sprite {
 
     public Sprite(Node spriteNode)
     {
-        this.spriteNode = spriteNode;
         NamedNodeMap attributes = spriteNode.getAttributes();
         try
         {
-            this.x = Integer.parseInt(attributes.getNamedItem("x").getNodeValue());
-            this.y = Integer.parseInt(attributes.getNamedItem("y").getNodeValue());
-            this.interaction = attributes.getNamedItem("interaction").getNodeValue();
-            photoID = attributes.getNamedItem("res").getNodeValue();
-            spriteImage = ImageIO.read(new File("res/images/" + photoID));
+            Node currentAttribute = attributes.getNamedItem("x");
+            if (currentAttribute != null)
+                this.x = Integer.parseInt(currentAttribute.getNodeValue());
+            else
+                this.x =  0;
+
+            currentAttribute = attributes.getNamedItem("y");
+            if (currentAttribute != null)
+                this.y = Integer.parseInt(currentAttribute.getNodeValue());
+            else
+                this.y =  0;
+
+            currentAttribute = attributes.getNamedItem("order");
+            if (currentAttribute != null)
+                this.order = Integer.parseInt(currentAttribute.getNodeValue());
+            else
+                this.order =  -1;
+
+            currentAttribute = attributes.getNamedItem("interaction");
+            if (currentAttribute != null)
+                this.interaction = currentAttribute.getNodeValue();
+            else
+                this.interaction = "collider";
+
+            currentAttribute = attributes.getNamedItem("filterToItem");
+            if (currentAttribute != null)
+                this.filterToItem = currentAttribute.getNodeValue();
+            else
+                this.filterToItem = null;
+
+            currentAttribute = attributes.getNamedItem("customInteractionRender");
+            if (currentAttribute != null)
+                this.customInteractionRender = currentAttribute.getNodeValue();
+            else
+                this.customInteractionRender = null;
+
+            currentAttribute = attributes.getNamedItem("givesItem");
+            if (currentAttribute != null)
+                this.itemsToGive = parseMultiScript(currentAttribute.getNodeValue());
+
+            currentAttribute = attributes.getNamedItem("res");
+            if (currentAttribute != null)
+            {
+                this.resource = currentAttribute.getNodeValue();
+                spriteImage = ImageIO.read(getClass().getResourceAsStream("res/images/" + resource));
+            }
+            else
+            {
+                this.resource = "null";
+                spriteImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+            }
             customWidth = spriteImage.getWidth();
             customHeight = spriteImage.getHeight();
-            String rawScript = "";
+
+            currentAttribute = attributes.getNamedItem("hideUntilCanInteract");
+            if (currentAttribute != null)
+                if (currentAttribute.getNodeValue().toLowerCase().equals("true"))
+                    this.hideUntilCanInteract = true;
+                else
+                    this.hideUntilCanInteract = false;
+            else
+                this.hideUntilCanInteract = false;
+
+            currentAttribute = attributes.getNamedItem("hideAfterInteraction");
+            if (currentAttribute != null)
+                if (currentAttribute.getNodeValue().toLowerCase().equals("true"))
+                    this.hideAfterInteraction = true;
+                else
+                    this.hideAfterInteraction = false;
+            else
+                this.hideAfterInteraction = false;
+
+            currentAttribute = attributes.getNamedItem("doesEndLevel");
+            if (currentAttribute != null)
+                if (currentAttribute.getNodeValue().toLowerCase().equals("true"))
+                    this.doesEndLevel = true;
+                else
+                    this.doesEndLevel = false;
+            else
+                this.doesEndLevel = false;
+
             if (spriteNode.hasChildNodes())
-            {
-                rawScript = spriteNode.getFirstChild().getTextContent();
-                interactionAction = new ArrayList<String>();
-                //parse the interaction script, looking for ` characters
-                int startIndex = 0;
-                for (int i = 0; i < rawScript.length(); i++) {
-                    if (rawScript.charAt(i) == '`')
-                    {
-                        interactionAction.add(rawScript.substring(startIndex, i));
-                        startIndex = i + 1;
-                    }
-                }
-                for (String s : interactionAction)
-                    System.out.println(s);
-            }
-            System.out.println(rawScript);
+                this.interactionText = parseMultiScript(spriteNode.getFirstChild().getTextContent());
+
+            this.isHidden = false;
         }
         catch (Exception e)
         {
             e.printStackTrace();
             spriteImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        }
+    }
+
+    public void changeImageToCustomRender()
+    {
+        if (customInteractionRender != null)
+        {
+            try
+            {
+                System.out.println(customInteractionRender);
+                spriteImage = ImageIO.read(getClass().getResourceAsStream("res/images/" + customInteractionRender));
+                customWidth = spriteImage.getWidth();
+                customHeight = spriteImage.getHeight();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -84,7 +196,12 @@ public class Sprite {
 
     public void drawInInventory (Graphics g, ImageObserver observer, Sprite inventorySprite, int indexInInventory)
     {
-        g.drawImage(spriteImage, inventorySprite.getX() + 10 + (75 * indexInInventory), inventorySprite.getY() + 50, 64, 64, observer);
+        g.drawImage(spriteImage, inventorySprite.getX() + 15 + (75 * indexInInventory), inventorySprite.getY() + 60, 32, 32, observer);
+    }
+
+    public void setHidden(boolean isHidden)
+    {
+        this.isHidden = isHidden;
     }
 
     public void setInteraction(String interaction)
@@ -128,6 +245,11 @@ public class Sprite {
         return customHeight;
     }
 
+    public int getOrder()
+    {
+        return order;
+    }
+
     public String getInteraction()
     {
         return interaction;
@@ -135,16 +257,66 @@ public class Sprite {
 
     public String getScriptAtLine(int line)
     {
-        return interactionAction.get(line);
+        return interactionText.get(line);
+    }
+
+    public String getItemToGive(int number)
+    {
+        return itemsToGive.get(number);
+    }
+
+    public String getItemFilter()
+    {
+        return filterToItem;
+    }
+
+    public String getCustomInteractionRender()
+    {
+        return customInteractionRender;
     }
 
     public int getLinesOfText()
     {
-        return interactionAction.size();
+        if (interactionText != null)
+            return interactionText.size();
+        else
+            return -1;
     }
 
-    public String getPhotoID()
+    public int getNumberOfItemsToGive()
     {
-        return photoID;
+        return itemsToGive.size();
+    }
+
+    public String getResource()
+    {
+        return resource;
+    }
+
+    public boolean getIsHidden()
+    {
+        return isHidden;
+    }
+
+    public boolean getDoesEndLevel() {
+        return doesEndLevel;
+    }
+
+    public boolean getHideUntilCanInteract()
+    {
+        return hideUntilCanInteract;
+    }
+
+    public boolean getHideAfterInteraction()
+    {
+        return hideAfterInteraction;
+    }
+
+    public boolean canGiveItems()
+    {
+        if (itemsToGive == null)
+            return false;
+        else
+            return true;
     }
 }

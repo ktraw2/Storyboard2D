@@ -29,11 +29,14 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
     Thread runThread;
     //final String[] LEVEL_FILE_NAMES = new String[]{"menu", "testlevel"};
     int currentLevel = 0;
+    int numberOfLevels = 0;
     int currentLineOfText = 0;
     int currentInteractionStage = 0;
     boolean levelXMLLoaded = false;
     boolean levelInitialized = false;
     boolean stopPlayerMovement = false;
+    boolean queueNextLevel = false;
+    boolean isFirstMenu = true;
     int indexOfTextToDraw = -1;
     Document levesDOM;
     Element root;
@@ -42,27 +45,30 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
     BufferedImage background = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
     BufferedImage loadingScreen = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
     BufferedImage textScreen = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-    File backgroundImageFile = new File("");
     Sprite textSprite;
     Sprite lastTextInteraction;
     int totalMillis = 0;
+    Font pressStart2P;
 
-    void buildTextInteraction(Sprite spriteToGetTextFrom, int startingIndex)
+    void buildTextInteraction(Sprite spriteToGetTextFrom)
     {
         lastTextInteraction = spriteToGetTextFrom;
         textSprite = new Sprite(this.getWidth() / 2 - textScreen.getWidth() / 2, this.getHeight() - textScreen.getHeight(), textScreen);
         sprites.add(textSprite);
+        System.out.println(sprites.indexOf(spriteToGetTextFrom));
         indexOfTextToDraw = sprites.indexOf(spriteToGetTextFrom);
-        currentLineOfText = startingIndex;
+        currentLineOfText = 0;
     }
 
     void changeLevel(int newLevel)
     {
+        System.out.println("changeTo: " + newLevel);
         currentLevel = newLevel;
         playerPos.x = this.getWidth() / 2;
         playerPos.y = this.getHeight() / 2;
         currentInteractionStage = 0;
         levelInitialized = false;
+        queueNextLevel = false;
     }
 
     Sprite checkInteraction()
@@ -150,10 +156,12 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
             {
                 stopPlayerMovement = true;
                 textSprite.drawRegular(g, this);
-                Font myFont = new Font(this.getFont().getName(), 1, 72);
-                g.setFont(myFont);
+                g.setFont(pressStart2P);
                 String text = sprites.get(indexOfTextToDraw).getScriptAtLine(currentLineOfText);
-                g.drawString(text, d.width / 2 - (this.getFontMetrics(myFont).stringWidth(text) / 2), d.height - (textScreen.getHeight() / 2) - (myFont.getSize() / 2));
+                Color background = g.getColor();
+                g.setColor(new Color(255, 255, 255));
+                g.drawString(text, d.width / 2 - (this.getFontMetrics(pressStart2P).stringWidth(text) / 2), d.height - (textScreen.getHeight() / 2) + ((int)this.getFontMetrics(pressStart2P).getStringBounds(text, g).getHeight() / 2));
+                g.setColor(background);
             }
         }
         else if (levelXMLLoaded && levelInitialized == false)
@@ -185,18 +193,19 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
         {
             if (!levelXMLLoaded)
             {
-                File file = new File("res/levels.xml");
                 try
                 {
-                    loadingScreen = ImageIO.read(new File("res/images/loading.jpg"));
-                    textScreen = ImageIO.read(new File("res/images/textscreen.png"));
+                    loadingScreen = ImageIO.read(getClass().getResourceAsStream("res/images/Loading_Screen.png"));
+                    textScreen = ImageIO.read(getClass().getResourceAsStream("res/images/Text_Box.png"));
+                    pressStart2P = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("res/PressStart2P.ttf"));
+                    pressStart2P = pressStart2P.deriveFont(20F);
                     //set up document builders for XML parsing
                     DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
                     DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
                     StringBuilder stringBuilder = new StringBuilder();
                     //read the XML file into the stringBuilder
-                    FileReader fileReader = new FileReader(file);
-                    BufferedReader bufferedReader = new BufferedReader(fileReader);
+                    InputStream inputStream = getClass().getResourceAsStream("res/levels.xml");
+                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
                     String currentLine = bufferedReader.readLine();
                     while (currentLine != null)
                     {
@@ -204,11 +213,12 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                         currentLine = bufferedReader.readLine();
                     }
                     bufferedReader.close();
-                    fileReader.close();
+                    inputStream.close();
                     //parse
                     ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(stringBuilder.toString().getBytes("UTF-8"));
                     levesDOM = documentBuilder.parse(byteArrayInputStream);
                     root = levesDOM.getDocumentElement();
+                    numberOfLevels = levesDOM.getElementsByTagName("level").getLength();
                     levelXMLLoaded = true;
                 }
                 catch (Exception e)
@@ -235,33 +245,58 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                         {
                             //find the node for the background and player sprite within the node for the current levesDOM
                             NodeList levelChildren = levelNode.getChildNodes();
-                            Node backgroundNode = null;
-                            for (int i = 0; i < levelChildren.getLength(); i++)
-                                if (levelChildren.item(i).getNodeName().equals("background"))
-                                    backgroundNode = levelChildren.item(i);
-                            if (backgroundNode != null)
+                            Node currentNode = levelNode.getAttributes().getNamedItem("background");
+                            if (currentNode != null)
                             {
                                 //get the path to the background image from the DOM then use the built in ImageIO to read it into the background
-                                backgroundImageFile = new File("res/images/" + backgroundNode.getAttributes().getNamedItem("res").getNodeValue());
-                                background = ImageIO.read(backgroundImageFile);
+                                background = ImageIO.read(getClass().getResourceAsStream("res/images/" + currentNode.getNodeValue()));
                             }
+                            else
+                                background = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+
                             String playerLocation = null;
-                            if (levelNode.getAttributes().getNamedItem("player") != null)
-                                playerLocation = levelNode.getAttributes().getNamedItem("player").getNodeValue();
+                            currentNode = levelNode.getAttributes().getNamedItem("player");
+                            if (currentNode != null)
+                                playerLocation = currentNode.getNodeValue();
                             if (!(playerLocation == null || playerLocation.equals("null")))
-                                player = ImageIO.read(new File("res/images/" + playerLocation));
+                                player = ImageIO.read(getClass().getResourceAsStream("res/images/" + playerLocation));
                             else
                                 player = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+
+                            currentNode = levelNode.getAttributes().getNamedItem("playerStartX");
+                            if (currentNode != null)
+                                playerPos.x = Integer.parseInt(currentNode.getNodeValue());
+                            else
+                                playerPos.x = (this.getWidth() / 2) - (player.getWidth() / 2);
+
+                            currentNode = levelNode.getAttributes().getNamedItem("playerStartY");
+                            if (currentNode != null)
+                                playerPos.y = Integer.parseInt(currentNode.getNodeValue());
+                            else
+                                playerPos.y = (this.getHeight() / 2) - (player.getHeight() / 2);
+
                             //find all sprites and add the sprite for the inventory screen (if currentLevel is not 0)
                             sprites = new ArrayList<Sprite>();
                             if (currentLevel != 0)
                             {
-                                BufferedImage inventoryImage = ImageIO.read(new File("res/images/inventory.png"));
+                                BufferedImage inventoryImage = ImageIO.read(getClass().getResourceAsStream("res/images/inventory.png"));
                                 sprites.add(new Sprite(this.getWidth() - inventoryImage.getWidth(), this.getHeight() - inventoryImage.getHeight(), inventoryImage));
                             }
                             for (int i = 0; i < levelChildren.getLength(); i++)
                                 if (levelChildren.item(i).getNodeName().equals("sprite"))
                                     sprites.add(new Sprite(levelChildren.item(i)));
+
+                            currentNode = levelNode.getAttributes().getNamedItem("introText");
+                            if (currentNode != null)
+                            {
+                                Sprite introTextSprite = new Sprite(currentNode.getNodeValue(), "introText");
+                                sprites.add(introTextSprite);
+                                buildTextInteraction(introTextSprite);
+                            }
+
+                            currentNode = levelNode.getAttributes().getNamedItem("startingItem");
+                            if (currentNode != null)
+                                inventory.add(new Sprite(ImageIO.read(getClass().getResourceAsStream("res/images/" + currentNode.getNodeValue())), currentNode.getNodeValue()));
                         }
                     }
                     catch (Exception e)
@@ -279,22 +314,35 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                 switch (i)
                 {
                     case (KeyEvent.VK_SPACE):
-                        if (currentLevel == 0)
+                        if (currentLevel == 0 && (totalMillis >= FRAME_DELAY * MIN_FRAMES_BETWEEN_TEXT_CHANGE || isFirstMenu))
                         {
+                            isFirstMenu = false;
                             changeLevel(1);
                         }
                         else
                         {
-                            if (indexOfTextToDraw != -1 && totalMillis >= FRAME_DELAY * MIN_FRAMES_BETWEEN_TEXT_CHANGE) {
+                            if (indexOfTextToDraw != -1 && totalMillis >= FRAME_DELAY * MIN_FRAMES_BETWEEN_TEXT_CHANGE)
+                            {
                                 totalMillis = 0;
                                 if (currentLineOfText + 1 < sprites.get(indexOfTextToDraw).getLinesOfText())
                                     currentLineOfText++;
-                                else {
+                                else
+                                    {
+                                    if (sprites.get(indexOfTextToDraw).getInteraction().equals("introText"))
+                                        sprites.remove(indexOfTextToDraw);
                                     sprites.remove(textSprite);
                                     indexOfTextToDraw = -1;
                                     currentLineOfText = 0;
                                     stopPlayerMovement = false;
                                     lastTextInteraction = null;
+                                    System.out.println("SPACE: " + queueNextLevel + " " + currentLevel + " " + numberOfLevels);
+                                    if (queueNextLevel == true) {
+                                        queueNextLevel = false;
+                                        if (currentLevel != numberOfLevels - 1)
+                                            changeLevel(currentLevel + 1);
+                                        else
+                                            changeLevel(0);
+                                    }
                                 }
                             }
                         }
@@ -350,13 +398,14 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                     case (KeyEvent.VK_E):
                         //see if the player is within 5 pixels of a sprite
                         collider = checkInteraction();
-                        if (collider.getOrder() < 0 || collider.getOrder() == currentInteractionStage)
+                        if (collider.getInteraction().equals("zoneEmpty") == false && (collider.getOrder() < 0 || collider.getOrder() == currentInteractionStage))
                         {
                             boolean interactionFailed = false;
                             if (collider.getInteraction().equals("text") && collider != lastTextInteraction)
                             {
                                 System.out.println("text");
-                                buildTextInteraction(collider, 0);
+                                if (collider.getLinesOfText() != -1)
+                                    buildTextInteraction(collider);
                             }
                             else if (collider.getInteraction().equals("item"))
                             {
@@ -368,7 +417,7 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                             {
                                 System.out.println("zone");
                                 String itemFilter = collider.getItemFilter();
-                                if (!itemFilter.equals("any")) {
+                                if (itemFilter != null) {
                                     int foundIndex = -1;
                                     for (Sprite sprite : inventory)
                                     {
@@ -384,15 +433,38 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                                         Sprite itemToPlace = inventory.get(foundIndex);
                                         inventory.remove(itemToPlace);
                                         itemToPlace.setInteraction("collider");
-                                        if (itemToPlace.getWidth() > collider.getWidth())
-                                            itemToPlace.setCustomWidth(collider.getWidth());
-                                        if (itemToPlace.getHeight() > collider.getHeight())
-                                            itemToPlace.setCustomHeight(collider.getHeight());
-                                        itemToPlace.setCoordinates(new Point(collider.getX() + (collider.getWidth() / 2) - (itemToPlace.getWidth() / 2), collider.getY() + (collider.getHeight() / 2) - (itemToPlace.getHeight() / 2)));
-                                        sprites.add(itemToPlace);
+                                        System.out.println(collider.getCustomInteractionRender() == null);
+                                        if (collider.getCustomInteractionRender() == null)
+                                        {
+                                            if (itemToPlace.getWidth() > collider.getWidth())
+                                                itemToPlace.setCustomWidth(collider.getWidth());
+                                            if (itemToPlace.getHeight() > collider.getHeight())
+                                                itemToPlace.setCustomHeight(collider.getHeight());
+                                            itemToPlace.setCoordinates(new Point(collider.getX() + (collider.getWidth() / 2) - (itemToPlace.getWidth() / 2), collider.getY() + (collider.getHeight() / 2) - (itemToPlace.getHeight() / 2)));
+                                            sprites.add(itemToPlace);
+                                        }
+                                        else
+                                        {
+                                            collider.changeImageToCustomRender();
+                                        }
+                                        if (collider.canGiveItems())
+                                        {
+                                            try
+                                            {
+                                                for (int j = 0; j < collider.getNumberOfItemsToGive(); j++)
+                                                {
+                                                    System.out.println(collider.getItemToGive(j));
+                                                    inventory.add(new Sprite(ImageIO.read(getClass().getResourceAsStream("res/images/" + collider.getItemToGive(j))), collider.getItemToGive(j)));
+                                                }
+                                            }
+                                            catch (Exception e)
+                                            {
+                                                e.printStackTrace();
+                                            }
+                                        }
                                         collider.setInteraction("collider");
-                                        if (collider.getLinesOfText() > 1)
-                                            buildTextInteraction(collider, 0);
+                                        if (collider.getLinesOfText() != -1)
+                                            buildTextInteraction(collider);
                                     }
                                     else
                                     {
@@ -400,11 +472,21 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                                     }
                                 }
                             }
+                            else if (collider.getInteraction().equals("collider"))
+                                System.out.println("collider");
                             if (collider.getOrder() == currentInteractionStage && !interactionFailed)
                                 currentInteractionStage++;
+                            //check to see if the level needs to be changed
+                            if (collider.getDoesEndLevel() == true && indexOfTextToDraw == -1)
+                            {
+                                if (currentLevel != numberOfLevels)
+                                    changeLevel(currentLevel + 1);
+                                else
+                                    changeLevel(0);
+                            }
+                            else if (collider.getDoesEndLevel() == true && indexOfTextToDraw != -1)
+                                queueNextLevel = true;
                         }
-                        else if (collider.getInteraction().equals("collider"))
-                            System.out.println("collider");
                         break;
                 }
             }
