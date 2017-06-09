@@ -49,21 +49,21 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
     Sprite lastTextInteraction;
     int totalMillis = 0;
     Font pressStart2P;
+    String currentLevelFlag = "";
 
     void buildTextInteraction(Sprite spriteToGetTextFrom)
     {
         lastTextInteraction = spriteToGetTextFrom;
         textSprite = new Sprite(this.getWidth() / 2 - textScreen.getWidth() / 2, this.getHeight() - textScreen.getHeight(), textScreen);
         sprites.add(textSprite);
-        System.out.println(sprites.indexOf(spriteToGetTextFrom));
         indexOfTextToDraw = sprites.indexOf(spriteToGetTextFrom);
         currentLineOfText = 0;
     }
 
     void changeLevel(int newLevel)
     {
-        System.out.println("changeTo: " + newLevel);
         currentLevel = newLevel;
+        currentLevelFlag = "";
         playerPos.x = this.getWidth() / 2;
         playerPos.y = this.getHeight() / 2;
         currentInteractionStage = 0;
@@ -134,12 +134,19 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
         //drawRegular background image if it exists
         if (levelXMLLoaded && levelInitialized)
         {
-            g.drawImage(background, 0, 0, this);
-            //drawRegular all sprites
-            for (Sprite sprite : sprites)
+            try
             {
-                if (spriteCanBeDrawn(sprite))
-                    sprite.drawRegular(g, this);
+                g.drawImage(background, 0, 0, this);
+                //drawRegular all sprites
+                for (Sprite sprite : sprites)
+                {
+                    if (spriteCanBeDrawn(sprite))
+                        sprite.drawRegular(g, this);
+                }
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
             }
             //drawRegular inventory items
             for (Sprite sprite : inventory)
@@ -157,7 +164,10 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                 stopPlayerMovement = true;
                 textSprite.drawRegular(g, this);
                 g.setFont(pressStart2P);
-                String text = sprites.get(indexOfTextToDraw).getScriptAtLine(currentLineOfText);
+                String text = "";
+                Sprite spriteToGetTextFrom = sprites.get(indexOfTextToDraw);
+                if (spriteToGetTextFrom.getLinesOfText() != -1)
+                    text = spriteToGetTextFrom.getScriptAtLine(currentLineOfText);
                 Color background = g.getColor();
                 g.setColor(new Color(255, 255, 255));
                 g.drawString(text, d.width / 2 - (this.getFontMetrics(pressStart2P).stringWidth(text) / 2), d.height - (textScreen.getHeight() / 2) + ((int)this.getFontMetrics(pressStart2P).getStringBounds(text, g).getHeight() / 2));
@@ -275,9 +285,16 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                             else
                                 playerPos.y = (this.getHeight() / 2) - (player.getHeight() / 2);
 
+                            currentNode = levelNode.getAttributes().getNamedItem("flag");
+                            if (currentNode != null)
+                                currentLevelFlag = currentNode.getNodeValue();
+                            else
+                                currentLevelFlag = "";
+
                             //find all sprites and add the sprite for the inventory screen (if currentLevel is not 0)
                             sprites = new ArrayList<Sprite>();
-                            if (currentLevel != 0)
+                            System.out.println(currentLevelFlag.equals(""));
+                            if (currentLevelFlag.equals(""))
                             {
                                 BufferedImage inventoryImage = ImageIO.read(getClass().getResourceAsStream("res/images/inventory.png"));
                                 sprites.add(new Sprite(this.getWidth() - inventoryImage.getWidth(), this.getHeight() - inventoryImage.getHeight(), inventoryImage));
@@ -307,188 +324,199 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                 }
             }
             //interpret key events
-            Integer[] keysToProcess = pressedKeys.toArray(new Integer[pressedKeys.size()]);
-            Sprite collider = null;
-            for (int i : keysToProcess)
+            Integer[] keysToProcess;
+            try
             {
-                switch (i)
+                keysToProcess = pressedKeys.toArray(new Integer[pressedKeys.size()]);
+                Sprite collider = null;
+                for (int i : keysToProcess)
                 {
-                    case (KeyEvent.VK_SPACE):
-                        if (currentLevel == 0 && (totalMillis >= FRAME_DELAY * MIN_FRAMES_BETWEEN_TEXT_CHANGE || isFirstMenu))
-                        {
-                            isFirstMenu = false;
-                            changeLevel(1);
-                        }
-                        else
-                        {
-                            if (indexOfTextToDraw != -1 && totalMillis >= FRAME_DELAY * MIN_FRAMES_BETWEEN_TEXT_CHANGE)
+                    switch (i)
+                    {
+                        case (KeyEvent.VK_SPACE):
+                            if ((currentLevelFlag.equals("start") || currentLevelFlag.equals("end") || currentLevelFlag.equals("credits")) && (totalMillis >= FRAME_DELAY * MIN_FRAMES_BETWEEN_TEXT_CHANGE || isFirstMenu))
                             {
-                                totalMillis = 0;
-                                if (currentLineOfText + 1 < sprites.get(indexOfTextToDraw).getLinesOfText())
-                                    currentLineOfText++;
-                                else
-                                    {
-                                    if (sprites.get(indexOfTextToDraw).getInteraction().equals("introText"))
-                                        sprites.remove(indexOfTextToDraw);
-                                    sprites.remove(textSprite);
-                                    indexOfTextToDraw = -1;
-                                    currentLineOfText = 0;
-                                    stopPlayerMovement = false;
-                                    lastTextInteraction = null;
-                                    System.out.println("SPACE: " + queueNextLevel + " " + currentLevel + " " + numberOfLevels);
-                                    if (queueNextLevel == true) {
-                                        queueNextLevel = false;
-                                        if (currentLevel != numberOfLevels - 1)
-                                            changeLevel(currentLevel + 1);
-                                        else
-                                            changeLevel(0);
+                                if (currentLevelFlag.equals("start"))
+                                {
+                                    totalMillis = 0;
+                                    isFirstMenu = false;
+                                    changeLevel(1);
+                                }
+                                else if (currentLevelFlag.equals("end"))
+                                {
+                                    totalMillis = 0;
+                                    changeLevel(currentLevel + 1);
+                                }
+                                else if (currentLevelFlag.equals("credits"))
+                                {
+                                    totalMillis = 0;
+                                    changeLevel(0);
+                                }
+                            }
+                            else
+                                {
+                                if (indexOfTextToDraw != -1 && totalMillis >= FRAME_DELAY * MIN_FRAMES_BETWEEN_TEXT_CHANGE)
+                                {
+                                    totalMillis = 0;
+                                    if (currentLineOfText + 1 < sprites.get(indexOfTextToDraw).getLinesOfText())
+                                        currentLineOfText++;
+                                    else
+                                        {
+                                        if (sprites.get(indexOfTextToDraw).getInteraction().equals("introText"))
+                                            sprites.remove(indexOfTextToDraw);
+                                        sprites.remove(textSprite);
+                                        indexOfTextToDraw = -1;
+                                        currentLineOfText = 0;
+                                        stopPlayerMovement = false;
+                                        lastTextInteraction = null;
+                                        if (queueNextLevel == true)
+                                        {
+                                            queueNextLevel = false;
+                                            if (currentLevel != numberOfLevels - 1)
+                                                changeLevel(currentLevel + 1);
+                                            else
+                                                changeLevel(0);
+                                        }
                                     }
                                 }
                             }
-                        }
-                        break;
-                    case (KeyEvent.VK_W):
-                        if (!stopPlayerMovement)
-                        {
-                            collider = checkCollisions(0, -PLAYER_SPEED);
-                            if (playerPos.y - PLAYER_SPEED <= 0)
-                                playerPos.y = 0;
-                            else if (collider.getInteraction().equals("zoneEmpty") || (collider.getInteraction().equals("zone") && inventory.size() == 0))
-                                playerPos.y -= PLAYER_SPEED;
-                            else
-                                playerPos.y = collider.getY() + collider.getHeight();
-                        }
-                        break;
-                    case (KeyEvent.VK_S):
-                        if (!stopPlayerMovement)
-                        {
-                            collider = checkCollisions(0, PLAYER_SPEED);
-                            if (playerPos.y + player.getHeight() + PLAYER_SPEED >= this.getHeight())
-                                playerPos.y = this.getHeight() - player.getHeight();
-                            else if (collider.getInteraction().equals("zoneEmpty") || (collider.getInteraction().equals("zone") && inventory.size() == 0))
-                                playerPos.y += PLAYER_SPEED;
-                            else
-                                playerPos.y = collider.getY() - player.getHeight();
-                        }
-                        break;
-                    case (KeyEvent.VK_A):
-                        if (!stopPlayerMovement)
-                        {
-                            collider = checkCollisions(-PLAYER_SPEED, 0);
-                            if (playerPos.x - PLAYER_SPEED <= 0)
-                                playerPos.x = 0;
-                            else if (collider.getInteraction().equals("zoneEmpty") || (collider.getInteraction().equals("zone") && inventory.size() == 0))
-                                playerPos.x -= PLAYER_SPEED;
-                            else
-                                playerPos.x = collider.getX() + collider.getWidth();
-                        }
-                        break;
-                    case (KeyEvent.VK_D):
-                        if (!stopPlayerMovement)
-                        {
-                            collider = checkCollisions(PLAYER_SPEED, 0);
-                            if (playerPos.x + player.getWidth() + PLAYER_SPEED >= this.getWidth())
-                                playerPos.x = this.getWidth() - player.getWidth();
-                            else if (collider.getInteraction().equals("zoneEmpty") || (collider.getInteraction().equals("zone") && inventory.size() == 0))
-                                playerPos.x += PLAYER_SPEED;
-                            else
-                                playerPos.x = collider.getX() - player.getWidth();
-                        }
-                        break;
-                    case (KeyEvent.VK_E):
-                        //see if the player is within 5 pixels of a sprite
-                        collider = checkInteraction();
-                        if (collider.getInteraction().equals("zoneEmpty") == false && (collider.getOrder() < 0 || collider.getOrder() == currentInteractionStage))
-                        {
-                            boolean interactionFailed = false;
-                            if (collider.getInteraction().equals("text") && collider != lastTextInteraction)
+                            break;
+                        case (KeyEvent.VK_W):
+                            if (!stopPlayerMovement)
                             {
-                                System.out.println("text");
-                                if (collider.getLinesOfText() != -1)
-                                    buildTextInteraction(collider);
+                                collider = checkCollisions(0, -PLAYER_SPEED);
+                                if (playerPos.y - PLAYER_SPEED <= 0)
+                                    playerPos.y = 0;
+                                else if (collider.getInteraction().equals("zoneEmpty") || (collider.getInteraction().equals("zone") && inventory.size() == 0))
+                                    playerPos.y -= PLAYER_SPEED;
+                                else
+                                    playerPos.y = collider.getY() + collider.getHeight();
                             }
-                            else if (collider.getInteraction().equals("item"))
+                            break;
+                        case (KeyEvent.VK_S):
+                            if (!stopPlayerMovement)
                             {
-                                System.out.println("item");
-                                inventory.add(collider);
-                                sprites.remove(collider);
+                                collider = checkCollisions(0, PLAYER_SPEED);
+                                if (playerPos.y + player.getHeight() + PLAYER_SPEED >= this.getHeight())
+                                    playerPos.y = this.getHeight() - player.getHeight();
+                                else if (collider.getInteraction().equals("zoneEmpty") || (collider.getInteraction().equals("zone") && inventory.size() == 0))
+                                    playerPos.y += PLAYER_SPEED;
+                                else
+                                    playerPos.y = collider.getY() - player.getHeight();
                             }
-                            else if (collider.getInteraction().equals("zone"))
+                            break;
+                        case (KeyEvent.VK_A):
+                            if (!stopPlayerMovement)
                             {
-                                System.out.println("zone");
-                                String itemFilter = collider.getItemFilter();
-                                if (itemFilter != null) {
-                                    int foundIndex = -1;
-                                    for (Sprite sprite : inventory)
+                                collider = checkCollisions(-PLAYER_SPEED, 0);
+                                if (playerPos.x - PLAYER_SPEED <= 0)
+                                    playerPos.x = 0;
+                                else if (collider.getInteraction().equals("zoneEmpty") || (collider.getInteraction().equals("zone") && inventory.size() == 0))
+                                    playerPos.x -= PLAYER_SPEED;
+                                else
+                                    playerPos.x = collider.getX() + collider.getWidth();
+                            }
+                            break;
+                        case (KeyEvent.VK_D):
+                            if (!stopPlayerMovement)
+                            {
+                                collider = checkCollisions(PLAYER_SPEED, 0);
+                                if (playerPos.x + player.getWidth() + PLAYER_SPEED >= this.getWidth())
+                                    playerPos.x = this.getWidth() - player.getWidth();
+                                else if (collider.getInteraction().equals("zoneEmpty") || (collider.getInteraction().equals("zone") && inventory.size() == 0))
+                                    playerPos.x += PLAYER_SPEED;
+                                else
+                                    playerPos.x = collider.getX() - player.getWidth();
+                            }
+                            break;
+                        case (KeyEvent.VK_E):
+                            //see if the player is within 5 pixels of a sprite
+                            collider = checkInteraction();
+                            if (collider.getInteraction().equals("zoneEmpty") == false && (collider.getOrder() < 0 || collider.getOrder() == currentInteractionStage))
+                            {
+                                boolean interactionFailed = false;
+                                if (collider.getInteraction().equals("text") && collider != lastTextInteraction)
+                                {
+                                    if (collider.getLinesOfText() != -1)
+                                        buildTextInteraction(collider);
+                                }
+                                else if (collider.getInteraction().equals("item"))
+                                {
+                                    inventory.add(collider);
+                                    sprites.remove(collider);
+                                }
+                                else if (collider.getInteraction().equals("zone"))
+                                {
+                                    String itemFilter = collider.getItemFilter();
+                                    if (itemFilter != null)
                                     {
-                                        System.out.println(sprite.getResource());
-                                        if (sprite.getResource().equals(itemFilter))
+                                        int foundIndex = -1;
+                                        for (Sprite sprite : inventory)
                                         {
-                                            foundIndex = inventory.indexOf(sprite);
-                                            break;
-                                        }
-                                    }
-                                    if (foundIndex != -1)
-                                    {
-                                        Sprite itemToPlace = inventory.get(foundIndex);
-                                        inventory.remove(itemToPlace);
-                                        itemToPlace.setInteraction("collider");
-                                        System.out.println(collider.getCustomInteractionRender() == null);
-                                        if (collider.getCustomInteractionRender() == null)
-                                        {
-                                            if (itemToPlace.getWidth() > collider.getWidth())
-                                                itemToPlace.setCustomWidth(collider.getWidth());
-                                            if (itemToPlace.getHeight() > collider.getHeight())
-                                                itemToPlace.setCustomHeight(collider.getHeight());
-                                            itemToPlace.setCoordinates(new Point(collider.getX() + (collider.getWidth() / 2) - (itemToPlace.getWidth() / 2), collider.getY() + (collider.getHeight() / 2) - (itemToPlace.getHeight() / 2)));
-                                            sprites.add(itemToPlace);
-                                        }
-                                        else
-                                        {
-                                            collider.changeImageToCustomRender();
-                                        }
-                                        if (collider.canGiveItems())
-                                        {
-                                            try
+                                            if (sprite.getResource().equals(itemFilter))
                                             {
-                                                for (int j = 0; j < collider.getNumberOfItemsToGive(); j++)
+                                                foundIndex = inventory.indexOf(sprite);
+                                                break;
+                                            }
+                                        }
+                                        if (foundIndex != -1)
+                                        {
+                                            Sprite itemToPlace = inventory.get(foundIndex);
+                                            inventory.remove(itemToPlace);
+                                            itemToPlace.setInteraction("collider");
+                                            if (collider.getCustomInteractionRender() == null)
+                                            {
+                                                if (itemToPlace.getWidth() > collider.getWidth())
+                                                    itemToPlace.setCustomWidth(collider.getWidth());
+                                                if (itemToPlace.getHeight() > collider.getHeight())
+                                                    itemToPlace.setCustomHeight(collider.getHeight());
+                                                itemToPlace.setCoordinates(new Point(collider.getX() + (collider.getWidth() / 2) - (itemToPlace.getWidth() / 2), collider.getY() + (collider.getHeight() / 2) - (itemToPlace.getHeight() / 2)));
+                                                sprites.add(itemToPlace);
+                                            }
+                                            else
+                                                collider.changeImageToCustomRender();
+                                            if (collider.canGiveItems())
+                                            {
+                                                try
                                                 {
-                                                    System.out.println(collider.getItemToGive(j));
-                                                    inventory.add(new Sprite(ImageIO.read(getClass().getResourceAsStream("res/images/" + collider.getItemToGive(j))), collider.getItemToGive(j)));
+                                                    for (int j = 0; j < collider.getNumberOfItemsToGive(); j++)
+                                                        inventory.add(new Sprite(ImageIO.read(getClass().getResourceAsStream("res/images/" + collider.getItemToGive(j))), collider.getItemToGive(j)));
+                                                }
+                                                catch (Exception e)
+                                                {
+                                                    e.printStackTrace();
                                                 }
                                             }
-                                            catch (Exception e)
-                                            {
-                                                e.printStackTrace();
-                                            }
+                                            collider.setInteraction("collider");
+                                            if (collider.getLinesOfText() != -1)
+                                                buildTextInteraction(collider);
                                         }
-                                        collider.setInteraction("collider");
-                                        if (collider.getLinesOfText() != -1)
-                                            buildTextInteraction(collider);
-                                    }
-                                    else
-                                    {
-                                        interactionFailed = true;
+                                        else
+                                        {
+                                            interactionFailed = true;
+                                        }
                                     }
                                 }
+                                if (collider.getOrder() == currentInteractionStage && !interactionFailed)
+                                    currentInteractionStage++;
+                                //check to see if the level needs to be changed
+                                if (collider.getDoesEndLevel() == true && indexOfTextToDraw == -1)
+                                {
+                                    if (currentLevel != numberOfLevels)
+                                        changeLevel(currentLevel + 1);
+                                    else
+                                        changeLevel(0);
+                                }
+                                else if (collider.getDoesEndLevel() == true && indexOfTextToDraw != -1)
+                                    queueNextLevel = true;
                             }
-                            else if (collider.getInteraction().equals("collider"))
-                                System.out.println("collider");
-                            if (collider.getOrder() == currentInteractionStage && !interactionFailed)
-                                currentInteractionStage++;
-                            //check to see if the level needs to be changed
-                            if (collider.getDoesEndLevel() == true && indexOfTextToDraw == -1)
-                            {
-                                if (currentLevel != numberOfLevels)
-                                    changeLevel(currentLevel + 1);
-                                else
-                                    changeLevel(0);
-                            }
-                            else if (collider.getDoesEndLevel() == true && indexOfTextToDraw != -1)
-                                queueNextLevel = true;
-                        }
-                        break;
+                            break;
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
             }
             repaint();
             try

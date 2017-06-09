@@ -177,7 +177,6 @@ public class Sprite {
         {
             try
             {
-                System.out.println(customInteractionRender);
                 spriteImage = ImageIO.read(getClass().getResourceAsStream("res/images/" + customInteractionRender));
                 customWidth = spriteImage.getWidth();
                 customHeight = spriteImage.getHeight();

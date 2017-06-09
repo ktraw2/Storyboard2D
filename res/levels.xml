@@ -1,31 +1,34 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <levels>
-    <level name="Main Menu" stage="0" background="Start_Screen.png" flag="menu"></level>
+    <level name="Main Menu" stage="0" background="Start_Screen.png" flag="start"></level>
 
     <level name="Puritanism" stage="1" background="Church.png" player="McCauley_-_Child_Compressed.png" introText="The year is 1672.`You are an American colonist.`Your life as a Puritan is empty.`You wonder how you can find fulfillment.`Maybe there's a religious artifact`that you can bring to the altar?`">
         <sprite res="Cross.png" interaction="item" order="0" x="123" y="500"></sprite>
         <sprite res="Cross-Drop-Zone.png" interaction="zone" order="1" hideUntilCanInteract="true" hideAfterInteraction="true" filterToItem="Cross.png" x="576" y="46">You feel a sense of fulfillemnt!`Even though you kow you are predestined`to heaven or hell,`you still feel like the community will accept you`and that you are close to being content in life.`Maybe you should commune with God`so that you can ask how to`better dedicate youself to Him`while on Earth.`</sprite>
-        <sprite res="Pew-Collider.png" interaction="text" order="2" hideUntilCanInteract="true" doesEndLevel="true" x="248" y="264">You pray`"Please help me while on Earth, I want`to dedicate myself to you."`Suddenly,`you feel like have found your purpose.`You know what to dedicate your energy to`But there must be something more...`</sprite>
+        <sprite res="Pew-Collider.png" interaction="text" order="2" hideUntilCanInteract="true" doesEndLevel="true" x="248" y="264">You pray`"Please help me while on Earth, I want`to dedicate myself to you."`Suddenly,`you feel like have found your purpose.`You know what to dedicate your energy to`But this lifestyle isn't for you.`There must be something more...`</sprite>
     </level>
 
     <level name="Transcendentalism" stage="2" background="Woods.png" startingItem="Axe.png" player="McCauley_-_Child_Compressed.png" introText="The year is 1831.`You live amongst nature alone,`but you lack necessities.`The axe you brought will assist you.`">
-        <sprite res="Tree.png" interaction="zone" order="0" hideAfterInteraction="true" filterToItem="Axe.png" givesItem="Log.png`" x="240" y="192">With these logs, you can create shelter.`</sprite>
+        <sprite res="Tree.png" interaction="zone" order="0" hideAfterInteraction="true" filterToItem="Axe.png" givesItem="Log.png`" x="240" y="192">With these logs, you can create shelter.`Your shelter will help you ponder the nature of reality`and help you find out what you are meant to be.`</sprite>
         <sprite res="Cabin-Collider.png" interaction="zone" order="1" hideUntilCanInteract="true" filterToItem="Log.png" customInteractionRender="Cabin.png" x="928" y="224">You built a cabin!`Reflect on what you have done over at the lake.`</sprite>
-        <sprite res="Lake-Collider.png" interaction="text" order="2" hideUntilCanInteract="true" doesEndLevel="true" x="841" y="2">You reflect on your new life looking out on the lake`With your new home, your soul is closer`to nature than ever before.`You feel fulfillment.</sprite>
+        <sprite res="Lake-Collider.png" interaction="text" order="2" hideUntilCanInteract="true" doesEndLevel="true" x="841" y="2">You reflect on your new life looking out on the lake`With your new home, your soul is closer`to nature than ever before.`You feel fulfillment.`But surely this purpose that you have found`isn't completely right for you,`so your search goes on...`</sprite>
     </level>
 
     <level name="Naturalism" stage="3" background="College.png" player="McCauley_-_Adult_Compressed.png" playerStartX="33" playerStartY="225" introText="It is now 1922.`You are at a university.`When you enrolled, the university asked what`you wanted to learn.`You pondered for a while,`and despite feeling your whole life`like you were born to be buried in a book`or profess the art of language to engaged students,`you chose to study biology instead.`Your logic was that you would be just fine`leaving what you were obviously born to do.`Well, it's time for class, and you have a lab.`Go take the tool from the table on the right`and bring it to the table on the left`to perform your experiment.`">
         <sprite res="Science-Tool.png" interaction="item" order="0" x="568" y="24"></sprite>
         <sprite res="Science-Vial.png" interaction="zone" order="1" filterToItem="Science-Tool.png" x="360" y="24">You stick the tool of science into the vial`but you realize the experiment has gone horribly wrong`"This is gross!" you exclaim.`Maybe trying to do something outside of your calling`was a bad idea.`Why not go to the English department`and see what they have for you?`It looks like there are some new`books to check out on the desk.`</sprite>
-        <sprite res="Books.png" interaction="text" order="2" hideUntilCanInteract="true" doesEndLevel="true" x="1032" y="208">Picking up the English textbook,`you feel moved.`"Rhetoric! Grammar! Spelling! Argument Analysis!"`you think to yourself.`Suddenly, you remember how good you are at English.`"How could I have been so stupid`so as to leave what I was naturally born to do?"`you ponder for a while.`Now, you feel like you have found your purpose:`to study and maybe even teach English.`You felt like nothing was working out in science,`but now that you've changed to English,`everything seems to be working out!`</sprite>
+        <sprite res="Books.png" interaction="text" order="2" hideUntilCanInteract="true" doesEndLevel="true" x="1032" y="208">Picking up the English textbook,`you feel moved.`"Rhetoric! Grammar! Spelling! Argument Analysis!"`you think to yourself.`Suddenly, you remember how good you are at English.`"How could I have been so stupid`so as to leave what I was naturally born to do?"`you ponder for a while.`Now, you feel like you have found your purpose:`to study and maybe even teach English.`You felt like nothing was working out in science,`but now that you've changed to English,`everything seems to be working out!`But alas, despite feeling like you found your purpose,`you press onward for perfection...`</sprite>
         <sprite res="Top-University-Entrance-Collider.png" interaction="collider" x="240" y="0"></sprite>
         <sprite res="Bottom-University-Entrance-Collider.png" interaction="collider" x="240" y="445"></sprite>
         <sprite res="University-Library-Collider.png" interaction="collider" x="768" y="0"></sprite>
     </level>
 
-    <level name="Existentialism" stage="4" background="Classroom.png" player="McCauley_-_Adult_Compressed.png">
-
+    <level name="Existentialism" stage="4" background="Classroom.png" player="McCauley_-_Adult_Compressed.png" playerStartX="461" playerStartY="531" introText="The year is 1955.`You took on your career passion of`teaching English in school`You live a happy life now,`doing what defines you.`You feel like you picked this path for yourself.`Maybe this is the perfect purpose...`">
+        <sprite res="Podium.png" interaction="text" order="0" doesEndLevel="true" x="1076" y="210">The school year has just ended,`and the students are gone.`Serving your desired purpose,`You feel fulfillment.`A feeling overcomes you.`"Eureka!" you shout into the empty classroom.`After finding your purpose many times in many ways,`this is the perfect purpose.`You chose to become a teacher,`to inspire the young.`You wanted this for yourself,`and you are content.......`</sprite>
+        <sprite res="Classroom-Collider.png" interaction="collider" x="0" y="0"></sprite>
     </level>
 
-    <level name="End" stage="5" background="android.jpg" flag="end"></level>
+    <level name="End" stage="5" background="End_Screen.png" flag="end"></level>
+
+    <level name="Credits" stage="6" background="Credits_Screen.png" flag="credits"></level>
 </levels>
