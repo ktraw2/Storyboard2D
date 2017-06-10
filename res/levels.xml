@@ -25,7 +25,7 @@
 
     <level name="Existentialism" stage="4" background="Classroom.png" player="McCauley_-_Adult_Compressed.png" playerStartX="461" playerStartY="531" introText="The year is 1955.`You took on your career passion of`teaching English in school`You live a happy life now,`doing what defines you.`You feel like you picked this path for yourself.`Maybe this is the perfect purpose...`">
         <sprite res="Podium.png" interaction="text" order="0" doesEndLevel="true" x="1076" y="210">The school year has just ended,`and the students are gone.`Serving your desired purpose,`You feel fulfillment.`A feeling overcomes you.`"Eureka!" you shout into the empty classroom.`After finding your purpose many times in many ways,`this is the perfect purpose.`You chose to become a teacher,`to inspire the young.`You wanted this for yourself,`and you are content.......`</sprite>
-        <sprite res="Classroom-Collider.png" interaction="collider" x="0" y="0"></sprite>
+        <sprite res="Classroom-Collider.png" interaction="collider" order="1" x="0" y="0"></sprite>
     </level>
 
     <level name="End" stage="5" background="End_Screen.png" flag="end"></level>

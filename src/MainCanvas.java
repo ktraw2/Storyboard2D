@@ -293,7 +293,6 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
 
                             //find all sprites and add the sprite for the inventory screen (if currentLevel is not 0)
                             sprites = new ArrayList<Sprite>();
-                            System.out.println(currentLevelFlag.equals(""));
                             if (currentLevelFlag.equals(""))
                             {
                                 BufferedImage inventoryImage = ImageIO.read(getClass().getResourceAsStream("res/images/inventory.png"));
