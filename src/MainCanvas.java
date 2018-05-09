@@ -12,6 +12,7 @@ import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.ArrayList;
+import javax.swing.*;
 
 /**
  * Created by kevin on 5/11/17.
@@ -26,8 +27,8 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
     ArrayList<Integer> pressedKeys = new ArrayList<Integer>();
     ArrayList<Sprite> sprites;
     ArrayList<Sprite> inventory = new ArrayList<Sprite>();
+    ArrayList<Sound> soundsToMonitor = new ArrayList<Sound>();
     Thread runThread;
-    //final String[] LEVEL_FILE_NAMES = new String[]{"menu", "testlevel"};
     int currentLevel = 0;
     int numberOfLevels = 0;
     int currentLineOfText = 0;
@@ -48,8 +49,21 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
     Sprite textSprite;
     Sprite lastTextInteraction;
     int totalMillis = 0;
-    Font pressStart2P;
+    Font customFont;
     String currentLevelFlag = "";
+    private String gameTitle = "Storyboard2D Engine";
+    private JFrame gameWindow;
+
+    public MainCanvas(JFrame gameWindow)
+    {
+        super();
+        this.gameWindow = gameWindow;
+    }
+
+    public String getGameTitle()
+    {
+        return gameTitle;
+    }
 
     void buildTextInteraction(Sprite spriteToGetTextFrom)
     {
@@ -69,6 +83,11 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
         currentInteractionStage = 0;
         levelInitialized = false;
         queueNextLevel = false;
+        for (Sound sound : soundsToMonitor)
+        {
+            sound.stop();
+        }
+        soundsToMonitor = new ArrayList<Sound>();
     }
 
     Sprite checkInteraction()
@@ -163,14 +182,17 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
             {
                 stopPlayerMovement = true;
                 textSprite.drawRegular(g, this);
-                g.setFont(pressStart2P);
+                if (customFont != null)
+                {
+                    g.setFont(customFont);
+                }
                 String text = "";
                 Sprite spriteToGetTextFrom = sprites.get(indexOfTextToDraw);
                 if (spriteToGetTextFrom.getLinesOfText() != -1)
                     text = spriteToGetTextFrom.getScriptAtLine(currentLineOfText);
                 Color background = g.getColor();
                 g.setColor(new Color(255, 255, 255));
-                g.drawString(text, d.width / 2 - (this.getFontMetrics(pressStart2P).stringWidth(text) / 2), d.height - (textScreen.getHeight() / 2) + ((int)this.getFontMetrics(pressStart2P).getStringBounds(text, g).getHeight() / 2));
+                g.drawString(text, d.width / 2 - (this.getFontMetrics(g.getFont()).stringWidth(text) / 2), d.height - (textScreen.getHeight() / 2) + (g.getFont().getSize() / 4));
                 g.setColor(background);
             }
         }
@@ -207,8 +229,7 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                 {
                     loadingScreen = ImageIO.read(getClass().getResourceAsStream("res/images/Loading_Screen.png"));
                     textScreen = ImageIO.read(getClass().getResourceAsStream("res/images/Text_Box.png"));
-                    pressStart2P = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("res/PressStart2P.ttf"));
-                    pressStart2P = pressStart2P.deriveFont(20F);
+
                     //set up document builders for XML parsing
                     DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
                     DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
@@ -230,6 +251,20 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                     root = levesDOM.getDocumentElement();
                     numberOfLevels = levesDOM.getElementsByTagName("level").getLength();
                     levelXMLLoaded = true;
+                    //load game title if necessary
+                    Node currentNode = root.getAttributes().getNamedItem("gameTitle");
+                    if (currentNode != null)
+                    {
+                        gameTitle = currentNode.getNodeValue();
+                        gameWindow.setTitle(gameTitle);
+                    }
+                    //load custom font if necessary
+                    currentNode = root.getAttributes().getNamedItem("gameFont");
+                    if (currentNode != null)
+                    {
+                        customFont = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("res/" + currentNode.getNodeValue()));
+                        customFont = customFont.deriveFont(40F);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -293,7 +328,8 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
 
                             //find all sprites and add the sprite for the inventory screen (if currentLevel is not 0)
                             sprites = new ArrayList<Sprite>();
-                            if (currentLevelFlag.equals(""))
+                            currentNode = levelNode.getAttributes().getNamedItem("showInventory");
+                            if (currentLevelFlag.equals("") && !(currentNode != null && currentNode.getNodeValue().equals("false")))
                             {
                                 BufferedImage inventoryImage = ImageIO.read(getClass().getResourceAsStream("res/images/inventory.png"));
                                 sprites.add(new Sprite(this.getWidth() - inventoryImage.getWidth(), this.getHeight() - inventoryImage.getHeight(), inventoryImage));
@@ -496,8 +532,16 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                                         }
                                     }
                                 }
+                                //essentially increase interaction order if it isn't -1
                                 if (collider.getOrder() == currentInteractionStage && !interactionFailed)
                                     currentInteractionStage++;
+                                //load any sounds if necessary
+                                Sound sound = collider.getInteractionSound();
+                                if (sound != null)
+                                {
+                                    sound.start();
+                                    soundsToMonitor.add(sound);
+                                }
                                 //check to see if the level needs to be changed
                                 if (collider.getDoesEndLevel() == true && indexOfTextToDraw == -1)
                                 {

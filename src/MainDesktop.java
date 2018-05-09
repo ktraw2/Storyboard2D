@@ -10,8 +10,8 @@ public class MainDesktop {
 
     public static void main (String[] args)
     {
-        JFrame mainFrame = new JFrame("Americanism");
-        Canvas mainCanvas = new MainCanvas();
+        JFrame mainFrame = new JFrame();
+        MainCanvas mainCanvas = new MainCanvas(mainFrame);
         mainCanvas.setSize(WINDOW_DIMENSION);
         mainCanvas.setPreferredSize(WINDOW_DIMENSION);
         mainFrame.add(mainCanvas);
@@ -19,6 +19,7 @@ public class MainDesktop {
         mainFrame.getContentPane().setPreferredSize(WINDOW_DIMENSION);
         mainFrame.pack();
         mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        mainFrame.setTitle(mainCanvas.getGameTitle());
         mainFrame.setVisible(true);
     }
 

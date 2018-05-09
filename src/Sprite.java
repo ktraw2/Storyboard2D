@@ -26,6 +26,7 @@ public class Sprite {
     private boolean hideAfterInteraction;
     private boolean isHidden;
     private boolean doesEndLevel;
+    private Sound interactionSound;
     ArrayList<String> interactionText;
     ArrayList<String> itemsToGive;
 
@@ -158,6 +159,10 @@ public class Sprite {
                     this.doesEndLevel = false;
             else
                 this.doesEndLevel = false;
+
+            currentAttribute = attributes.getNamedItem("interactionSound");
+            if (currentAttribute != null)
+                this.interactionSound = new Sound("res/sound/" + currentAttribute.getNodeValue());
 
             if (spriteNode.hasChildNodes())
                 this.interactionText = parseMultiScript(spriteNode.getFirstChild().getTextContent());
@@ -317,5 +322,10 @@ public class Sprite {
             return false;
         else
             return true;
+    }
+
+    public Sound getInteractionSound()
+    {
+        return interactionSound;
     }
 }
