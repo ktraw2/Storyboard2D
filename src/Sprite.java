@@ -11,11 +11,7 @@ import java.util.ArrayList;
 /**
  * Created by kevin on 5/14/17.
  */
-public class Sprite {
-    private int x;
-    private int y;
-    private int customWidth = 0;
-    private int customHeight = 0;
+public class Sprite extends Drawable {
     private int order;
     private String interaction;
     private String resource;
@@ -47,9 +43,8 @@ public class Sprite {
 
     public Sprite (BufferedImage spriteImage, String resource)
     {
+        super(spriteImage.getWidth(), spriteImage.getHeight());
         this.spriteImage = spriteImage;
-        customWidth = spriteImage.getWidth();
-        customHeight = spriteImage.getHeight();
         this.resource = resource;
     }
 
@@ -66,11 +61,8 @@ public class Sprite {
 
     public Sprite(int x, int y, BufferedImage spriteImage)
     {
-        this.x = x;
-        this.y = y;
+        super(x, y, spriteImage.getWidth(), spriteImage.getHeight());
         this.spriteImage = spriteImage;
-        customWidth = spriteImage.getWidth();
-        customHeight = spriteImage.getHeight();
         this.interaction = "collider";
     }
 
@@ -211,42 +203,6 @@ public class Sprite {
     public void setInteraction(String interaction)
     {
         this.interaction = interaction;
-    }
-
-    public void setCoordinates(Point coordinates)
-    {
-        this.x = coordinates.x;
-        this.y = coordinates.y;
-    }
-
-    public void setCustomWidth(int customWidth)
-    {
-        this.customWidth = customWidth;
-    }
-
-    public void setCustomHeight(int customHeight)
-    {
-        this.customHeight = customHeight;
-    }
-
-    public int getX()
-    {
-        return x;
-    }
-
-    public int getY()
-    {
-        return y;
-    }
-
-    public int getWidth()
-    {
-        return customWidth;
-    }
-
-    public int getHeight()
-    {
-        return customHeight;
     }
 
     public int getOrder()

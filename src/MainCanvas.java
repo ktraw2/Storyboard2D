@@ -263,7 +263,11 @@ public class MainCanvas extends Canvas implements KeyListener, Runnable {
                     if (currentNode != null)
                     {
                         customFont = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("res/" + currentNode.getNodeValue()));
-                        customFont = customFont.deriveFont(40F);
+                        currentNode = root.getAttributes().getNamedItem("gameFontSize");
+                        if (currentNode != null)
+                        {
+                            customFont = customFont.deriveFont(Float.parseFloat(currentNode.getNodeValue()));
+                        }
                     }
                 }
                 catch (Exception e)

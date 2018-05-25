@@ -1,21 +1,19 @@
 import javax.sound.sampled.*;
-import java.net.URL;
+import java.io.BufferedInputStream;
 
 public class Sound
 {
-    private Mixer mixer;
     private Clip clip;
-    private URL soundURL;
 
     public Sound(String resource)
     {
-        mixer = AudioSystem.getMixer(AudioSystem.getMixerInfo()[0]);
+        Mixer mixer = AudioSystem.getMixer(AudioSystem.getMixerInfo()[0]);
         DataLine.Info dataInfo = new DataLine.Info(Clip.class, null);
         try
         {
             clip = (Clip)mixer.getLine(dataInfo);
-            //soundURL = Sound.class.getResource(resource);
-            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(getClass().getResourceAsStream(resource));
+            BufferedInputStream buffer = new BufferedInputStream(getClass().getResourceAsStream(resource));
+            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(buffer);
             clip.open(audioInputStream);
         }
         catch (Exception e)
@@ -32,10 +30,5 @@ public class Sound
     public void stop()
     {
         clip.stop();
-    }
-
-    public boolean isPlaying()
-    {
-        return clip.isActive();
     }
 }
